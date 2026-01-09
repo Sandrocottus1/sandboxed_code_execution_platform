@@ -1,10 +1,25 @@
-const {Queue} =require("bullmq");
+const { Queue } = require("bullmq");
+const Job = require("../models/Job.model");
 
-const jobQueue= new Queue("code-execution",{
-    connection :{
-        host: "localhost",
-        port:6379
-    }
+const queue = new Queue("code-execution", {
+  connection: {
+    host: "redis",
+    port: 6379
+  }
 });
 
-module.exports=jobQueue;
+queue.on("completed", async (job, result) => {
+  await Job.findByIdAndUpdate(job.data.jobId, {
+    status: "Completed",
+    output: result.output
+  });
+});
+
+queue.on("failed", async (job, err) => {
+  await Job.findByIdAndUpdate(job.data.jobId, {
+    status: "Failed",
+    error: err.message
+  });
+});
+
+module.exports = queue;
