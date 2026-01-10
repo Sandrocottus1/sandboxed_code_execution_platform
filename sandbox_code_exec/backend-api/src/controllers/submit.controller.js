@@ -6,7 +6,7 @@ const jobQueue = require("../queue/jobQueue");
  */
 exports.submitCode = async (req, res) => {
   try {
-    const { code, language } = req.body;
+    const { code, language ,input } = req.body;
 
     if (!code) {
       return res.status(400).json({ error: "Code is required" });
@@ -24,6 +24,7 @@ exports.submitCode = async (req, res) => {
       jobId: job._id.toString(),
       code,
       language,
+      input: input || ""
     });
 
     // 3️⃣ Respond immediately

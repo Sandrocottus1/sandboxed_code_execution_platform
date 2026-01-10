@@ -15,14 +15,14 @@ new Worker(
     console.log(`[Job ${jobTicket.id}] Picked up. Processing...`);
 
     try {
-      const { jobId, code, language } = jobTicket.data;
+      const { jobId, code, language ,input } = jobTicket.data;
       
       // Update status to RUNNING
       await Job.findByIdAndUpdate(jobId, { status: "RUNNING" });
 
       // Execute Code (The dangerous part)
       console.log(`[Job ${jobTicket.id}] Sending to Docker...`);
-      const executionResult = await runDocker(code,language);
+      const executionResult = await runDocker(code,language,input);
       console.log(`[Job ${jobTicket.id}] Docker finished.`);
 
       // Update status to COMPLETED
