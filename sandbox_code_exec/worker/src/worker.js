@@ -20,7 +20,7 @@ new Worker(
       // Update status to RUNNING
       await Job.findByIdAndUpdate(jobId, { status: "RUNNING" });
 
-      // Execute Code (The dangerous part)
+      // Execute Code 
       console.log(`[Job ${jobTicket.id}] Sending to Docker...`);
       const executionResult = await runDocker(code,language,input);
       console.log(`[Job ${jobTicket.id}] Docker finished.`);

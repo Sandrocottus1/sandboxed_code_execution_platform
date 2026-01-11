@@ -8,7 +8,7 @@ module.exports = function runDocker(code, language,input) {
 
    const RUNTIMES = {
       python: {
-        image: "python:3.9-slim",
+        image: "python:3.9-alpine",
         // Decode B64 -> Save File -> Run
         cmd: `echo "${codeBase64}" | base64 -d > code.py && python3 code.py`
       },
@@ -17,12 +17,12 @@ module.exports = function runDocker(code, language,input) {
         cmd: `echo "${codeBase64}" | base64 -d > code.js && node code.js`
       },
       cpp: {
-        image: "gcc:latest",
+        image: "frolvlad/alpine-gxx",
         // Save to .cpp -> Compile -> Run
         cmd: `echo "${codeBase64}" | base64 -d > main.cpp && g++ -O2 main.cpp -o main && ./main`
       },
       java: {
-        image: "openjdk:17-jdk-slim",
+        image: "eclipse-temurin:17-jdk-alpine",
         // Java requires the filename to match the class "Main"
         cmd: `echo "${codeBase64}" | base64 -d > Main.java && javac Main.java && java Main`
       }
@@ -32,7 +32,7 @@ module.exports = function runDocker(code, language,input) {
 
     const child=spawn("docker",[
       "run", "--rm", "-i",
-      "--cpus=0.5", "--memory=256m", "--network=none",
+      "--cpus=1", "--memory=512m", "--network=none",
       config.image,
       "sh", "-c", config.cmd
     ]);
@@ -46,17 +46,18 @@ module.exports = function runDocker(code, language,input) {
       }catch(e){
         console.error("Error killing process", e);
       }
-      resolve("Error :Execution Times out (5s limit)");
-    },5000);
+      resolve("Error :Execution Times out (12s limit)");
+    },12000);
 
     let out = "";
     let err = "";
 
-    // Pipe the code into the container
-    if (input) {
-        child.stdin.write(input + "\n"); // Add newline just in case
-    }
-    child.stdin.end(); // Close input stream so program knows input is done
+    if (input && input.trim().length > 0) {
+        child.stdin.write(input + "\n");
+    } 
+    // If input is empty, we just close stdin. 
+    // This causes 'cin >> x' to fail immediately (EOF) instead of hanging forever.
+    child.stdin.end();
 
     child.stdout.on("data", (chunk) => { out += chunk.toString(); });
     child.stderr.on("data", (chunk) => { err += chunk.toString(); });
@@ -66,7 +67,8 @@ module.exports = function runDocker(code, language,input) {
       if (exitCode === 0) {
         resolve(out || "No Output returned.");
       } else {
-        resolve(err || "Runtime Error"); 
+        // If compilation fails, the error is usually in 'err'
+        resolve(err || "Runtime Error (Process killed)"); 
       }
     });
   });
