@@ -28,7 +28,8 @@ Prerequisites:
 • Node.js (optional)
 Installation:
 https://github.com/Sandrocottus1/sandboxed_code_execution_platform.git
-cd remote-code-executor
+
+cd sandboxed_code_execution_platform
 
 Run Backend:
 docker compose up -d --build
