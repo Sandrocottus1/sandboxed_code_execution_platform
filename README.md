@@ -27,7 +27,7 @@ Prerequisites:
 • Docker Desktop
 • Node.js (optional)
 Installation:
-git clone https://github.com/Sandrocottus1/remote-code-executor.git
+https://github.com/Sandrocottus1/sandboxed_code_execution_platform.git
 cd remote-code-executor
 
 Run Backend:
