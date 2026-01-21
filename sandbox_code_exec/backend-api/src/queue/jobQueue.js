@@ -1,12 +1,7 @@
 const { Queue } = require("bullmq");
 const Job = require("../models/Job.model");
 
-const queue = new Queue("code-execution", {
-  connection: {
-    host: "redis",
-    port: 6379
-  }
-});
+const myQueue = new Bull('my-queue', process.env.REDIS_URL);
 
 queue.on("completed", async (job, result) => {
   await Job.findByIdAndUpdate(job.data.jobId, {
