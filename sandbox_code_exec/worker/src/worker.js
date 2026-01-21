@@ -45,7 +45,7 @@ new Worker(
     }
   },
   {
-    connection: {
+    connection: process.env.REDIS_URL || {
       host: "redis",
       port: 6379,
     },
