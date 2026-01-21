@@ -1,3 +1,8 @@
+/* 1. Global Reset to prevent size miscalculations */
+* {
+  box-sizing: border-box;
+}
+
 :root {
   --bg-dark: #1e1e1e;
   --panel-bg: #252526;
@@ -5,23 +10,39 @@
   --text-primary: #d4d4d4;
 }
 
-body {
+/* 2. Lock Body and Root to screen size */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* Prevent full-page scrollbar */
   background-color: #121212;
+}
+
+body {
   color: var(--text-primary);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
   display: flex;
   justify-content: center;
 }
 
+/* 3. Main Container - Flex Column */
 .container {
-  width: 90%;
-  max-width: 1200px;
-  margin-top: 2rem;
+  width: 100%; /* Use 95% for more space */
+  max-width: 1400px;
+  height: 100vh; /* Fill exact screen height */
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0; /* Add top/bottom padding */
 }
 
-h1 { text-align: center; color: #fff; margin-bottom: 2rem; }
+h1 { 
+  text-align: center; 
+  color: #fff; 
+  margin: 0 0 1rem 0; 
+  font-size: 1.5rem;
+}
 
+/* 4. Control Panel (Buttons) */
 .control-panel {
   display: flex;
   gap: 1rem;
@@ -30,7 +51,7 @@ h1 { text-align: center; color: #fff; margin-bottom: 2rem; }
 }
 
 .lang-select {
-  padding: 10px;
+  padding: 8px;
   background: var(--panel-bg);
   color: white;
   border: 1px solid #3e3e42;
@@ -38,7 +59,7 @@ h1 { text-align: center; color: #fff; margin-bottom: 2rem; }
 }
 
 .run-btn {
-  padding: 10px 24px;
+  padding: 8px 20px;
   background-color: #28a745;
   color: white;
   border: none;
@@ -47,16 +68,22 @@ h1 { text-align: center; color: #fff; margin-bottom: 2rem; }
   font-weight: bold;
 }
 
-.run-btn:disabled { background-color: #555; cursor: not-allowed; }
-
+/* 5. Editor Layout - Grows to fill ALL remaining space */
 .editor-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
+  gap: 2rem;
+  
+  /* ⚡ FORCE HEIGHT: 100% of viewport minus ~140px for Header/Buttons */
+  height: calc(100vh - 140px); 
+  
+  min-height: 500px; /* Safety: never get too small on tiny screens */
+  margin-bottom: 0;
 }
 
 .editor-box {
   border: 1px solid #3e3e42;
+  height: 100%;   /* Fill the grid cell */
   overflow: hidden;
 }
 
@@ -64,25 +91,29 @@ h1 { text-align: center; color: #fff; margin-bottom: 2rem; }
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  height: 100%;
 }
 
 .input-section, .output-section {
   background: var(--panel-bg);
-  padding: 1rem;
-  border-radius: 6px;
+  padding: 0.5rem;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1; /* Share vertical space 50/50 */
+  min-height: 0;
 }
+
+h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
 
 textarea {
   background: #1e1e1e;
   color: white;
   border: 1px solid #3e3e42;
   border-radius: 4px;
-  min-height: 100px;
   padding: 8px;
-  resize: vertical;
+  resize: none;
+  flex: 1; /* Fill Input Section */
 }
 
 pre {
@@ -90,9 +121,15 @@ pre {
   padding: 10px;
   border-radius: 4px;
   white-space: pre-wrap;
-  min-height: 100px;
   font-family: 'Consolas', monospace;
+  overflow-y: auto;
+  flex: 1;
+  margin: 0; /* 👈 Add this to stop layout jumping */
 }
 
-.error-text { color: #ff6b6b; }
-.status-badge { font-size: 0.8rem; color: #888; margin-top: 5px; text-align: right; }
+.status-badge {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 5px;
+  text-align: right;
+}

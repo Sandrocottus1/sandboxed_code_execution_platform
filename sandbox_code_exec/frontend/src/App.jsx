@@ -73,14 +73,20 @@ function App(){
         </div>  
         <div className="editor-layout">
           <div className="editor-box">
-            <Editor 
-              height="50vh"
+          <Editor 
+              height="100%"
               defaultLanguage="python"
               language={language}
               value={code}
-              onChange={(value)=>setCode(value)}
+              onChange={(value) => setCode(value)}
               theme="vs-dark"
-            />
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                automaticLayout: true, 
+                scrollBeyondLastLine: false, 
+              }}
+              />
           </div>
 
           <div className="io-box">
