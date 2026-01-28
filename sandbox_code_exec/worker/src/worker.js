@@ -3,6 +3,20 @@ const mongoose = require("mongoose");
 const runDocker = require("./executor/runDocker");
 const Job = require("./backend-models/Job.model.js");
 
+
+const http = require('http');
+
+// This dummy server keeps Render happy so it doesn't kill the free service
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('Worker is running!');
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log(`Dummy server listening on port ${PORT}`);
+});
+
 // 1. Robust DB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Worker: MongoDB Connected"))
