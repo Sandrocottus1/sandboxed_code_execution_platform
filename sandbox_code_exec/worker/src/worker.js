@@ -1,6 +1,8 @@
 const { Worker } = require("bullmq");
 const mongoose = require("mongoose");
 const runDocker = require("./executor/runDocker");
+
+const IORedis = require("ioredis");
 const JobSchema = new mongoose.Schema({
     language: String,
     filepath: String,
@@ -21,6 +23,7 @@ const Job = mongoose.models.Job || mongoose.model("Job", JobSchema);
 
 const http = require('http');
 
+
 // This dummy server keeps Render happy so it doesn't kill the free service
 const server = http.createServer((req, res) => {
     res.writeHead(200);
@@ -30,6 +33,10 @@ const server = http.createServer((req, res) => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Dummy server listening on port ${PORT}`);
+});
+
+const connection = new IORedis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null
 });
 
 // 1. Robust DB Connection
@@ -74,9 +81,6 @@ new Worker(
     }
   },
   {
-    connection: process.env.REDIS_URL || {
-      host: "redis",
-      port: 6379,
-    },
+    connection
   }
 );
