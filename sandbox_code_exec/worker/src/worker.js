@@ -1,8 +1,23 @@
 const { Worker } = require("bullmq");
 const mongoose = require("mongoose");
 const runDocker = require("./executor/runDocker");
-const Job = require("./backend-models/Job.model.js");
+const JobSchema = new mongoose.Schema({
+    language: String,
+    filepath: String,
+    jobId: String,
+    submittedAt: { type: Date, default: Date.now },
+    startedAt: Date,
+    completedAt: Date,
+    status: {
+        type: String,
+        default: "pending",
+        enum: ["pending", "success", "error"]
+    },
+    output: String
+});
 
+// Checking if model exists before defining to prevent overwrite errors
+const Job = mongoose.models.Job || mongoose.model("Job", JobSchema);
 
 const http = require('http');
 
