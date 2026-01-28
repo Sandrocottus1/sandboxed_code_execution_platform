@@ -12,12 +12,14 @@ function App(){
   const [status,setStatus]=useState("");
   const [jobId, setJobId]=useState(null);
 
+  const API_URL=process.env.REACT_APP_API_URL;
+  
   const handleSubmit =async()=>{
     setOutput("");
     setStatus("Queueing...");
     //submition of code
     try{
-      const {data}=await axios.post("http://localhost:5000/api/submit",{
+      const {data}=await axios.post("${API_URL}/api/submit",{
         code,
         language,
         input
@@ -35,7 +37,7 @@ function App(){
   const pollJobStatus =async(id)=>{
     const intervalId=setInterval(async()=>{
       try{
-        const {data}=await axios.get(`http://localhost:5000/api/submit/job/${id}`);
+        const {data}=await axios.get(`${API_URL}/api/submit/job/${id}`);
         console.log("Job Status: ", data.status);
 
         if(data.status=="COMPLETED"||data.status=="ERROR"){
