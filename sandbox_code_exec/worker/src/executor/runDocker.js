@@ -1,75 +1,115 @@
 const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-module.exports = function runDocker(code, language,input) {
+// Helper to generate random file names
+const randomId = () => Math.random().toString(36).substring(7);
+
+module.exports = function runCode(code, language, input) {
   return new Promise((resolve) => {
-    // 1. Encode code to Base64 to safely pass it as a command argument
-    // This avoids shell escaping issues and allows us to write it to a file
-    const codeBase64=Buffer.from(code).toString('base64');
+    const jobId = randomId();
+    let filename = "";
+    let runCommand = "";
+    let args = [];
 
-   const RUNTIMES = {
-      python: {
-        image: "python:3.9-alpine",
-        // Decode B64 -> Save File -> Run
-        cmd: `echo "${codeBase64}" | base64 -d > code.py && python3 code.py`
-      },
-      javascript: {
-        image: "node:18-alpine",
-        cmd: `echo "${codeBase64}" | base64 -d > code.js && node code.js`
-      },
-      cpp: {
-        image: "frolvlad/alpine-gxx",
-        // Save to .cpp -> Compile -> Run
-        cmd: `echo "${codeBase64}" | base64 -d > main.cpp && g++ -O2 main.cpp -o main && ./main`
-      },
-      java: {
-        image: "eclipse-temurin:17-jdk-alpine",
-        // Java requires the filename to match the class "Main"
-        cmd: `echo "${codeBase64}" | base64 -d > Main.java && javac Main.java && java Main`
-      }
-};
-    // Default to python if language is missing/unknown
-    const config = RUNTIMES[language] || RUNTIMES.python;
+    // 1. Configure Language Settings (Local Paths)
+    switch (language) {
+      case "python":
+        filename = path.join(__dirname, `${jobId}.py`);
+        runCommand = "python3"; // Or 'python' depending on environment
+        args = [filename];
+        break;
+      case "javascript":
+        filename = path.join(__dirname, `${jobId}.js`);
+        runCommand = "node";
+        args = [filename];
+        break;
+      case "cpp":
+        // C++ is tricky without Docker. We try to compile locally.
+        // Note: This might fail if 'g++' is not installed on Render's Node image.
+        filename = path.join(__dirname, `${jobId}.cpp`);
+        const outName = path.join(__dirname, `${jobId}.out`);
+        runCommand = "sh";
+        // Compile then run
+        args = ["-c", `g++ "${filename}" -o "${outName}" && "${outName}"`];
+        break;
+      case "java":
+        // Java is also tricky. Assuming 'javac' and 'java' exist.
+        filename = path.join(__dirname, "Main.java"); // Java restricts filenames
+        runCommand = "sh";
+        args = ["-c", `javac "${filename}" && java -cp "${__dirname}" Main`];
+        break;
+      default:
+        resolve("Error: Unsupported language");
+        return;
+    }
 
-    const child=spawn("docker",[
-      "run", "--rm", "-i",
-      "--cpus=1", "--memory=512m", "--network=none",
-      config.image,
-      "sh", "-c", config.cmd
-    ]);
+    // 2. Write the User's Code to a File
+    try {
+      fs.writeFileSync(filename, code);
+    } catch (e) {
+      resolve("Error: Could not write code file.");
+      return;
+    }
 
-    const timeout=setTimeout(()=>{
-      try{
-        child.stdin.end();
+    // 3. Spawn the Process
+    const child = spawn(runCommand, args);
+
+    // 4. Setup Timeout (10 seconds)
+    const timeout = setTimeout(() => {
+      try {
         child.kill();
-        console.log("COde timed out .Killing...");
-
-      }catch(e){
-        console.error("Error killing process", e);
-      }
-      resolve("Error :Execution Times out (12s limit)");
-    },12000);
+        cleanup(); // Delete file
+      } catch (e) {}
+      resolve("Error: Execution Timed Out (10s limit)");
+    }, 10000);
 
     let out = "";
     let err = "";
 
-    if (input && input.trim().length > 0) {
-        child.stdin.write(input + "\n");
-    } 
-    // If input is empty, we just close stdin. 
-    // This causes 'cin >> x' to fail immediately (EOF) instead of hanging forever.
-    child.stdin.end();
+    // 5. Handle Input (stdin)
+    if (input) {
+      child.stdin.write(input);
+      child.stdin.end();
+    } else {
+      child.stdin.end();
+    }
 
+    // 6. Capture Output
     child.stdout.on("data", (chunk) => { out += chunk.toString(); });
     child.stderr.on("data", (chunk) => { err += chunk.toString(); });
 
+    // 7. Cleanup Function
+    const cleanup = () => {
+        // Try deleting the source file
+        if (fs.existsSync(filename)) fs.unlinkSync(filename);
+        // If C++, try deleting the executable
+        if (language === 'cpp' && fs.existsSync(path.join(__dirname, `${jobId}.out`))) {
+            fs.unlinkSync(path.join(__dirname, `${jobId}.out`));
+        }
+        // If Java, try deleting the class file
+        if (language === 'java' && fs.existsSync(path.join(__dirname, "Main.class"))) {
+            fs.unlinkSync(path.join(__dirname, "Main.class"));
+        }
+    };
+
+    // 8. On Process Exit
     child.on("close", (exitCode) => {
       clearTimeout(timeout);
+      cleanup();
+      
       if (exitCode === 0) {
-        resolve(out || "No Output returned.");
+        resolve(out || "No Output.");
       } else {
-        // If compilation fails, the error is usually in 'err'
-        resolve(err || "Runtime Error (Process killed)"); 
+        resolve(err || out || "Runtime Error.");
       }
+    });
+    
+    // Handle spawn errors (e.g., if python3 is missing)
+    child.on("error", (error) => {
+        clearTimeout(timeout);
+        cleanup();
+        resolve(`Execution Error: ${error.message} (Is the language installed?)`);
     });
   });
 };
