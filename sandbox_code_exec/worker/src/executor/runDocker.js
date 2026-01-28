@@ -62,7 +62,7 @@ module.exports = function runCode(code, language, input) {
         cleanup(); // Delete file
       } catch (e) {}
       resolve("Error: Execution Timed Out (10s limit)");
-    }, 10000);
+    }, 45000);
 
     let out = "";
     let err = "";
