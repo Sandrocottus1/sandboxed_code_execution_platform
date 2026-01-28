@@ -1,8 +1,10 @@
 const { Worker } = require("bullmq");
 const mongoose = require("mongoose");
-const runDocker = require("./executor/runDocker");
-
+const http = require("http");
 const IORedis = require("ioredis");
+
+const runCode = require("./executor/runDocker"); 
+
 const JobSchema = new mongoose.Schema({
     language: String,
     filepath: String,
@@ -13,74 +15,74 @@ const JobSchema = new mongoose.Schema({
     status: {
         type: String,
         default: "pending",
-        enum: ["pending", "success", "error"]
+        enum: ["pending", "success", "error", "COMPLETED", "RUNNING"] // Added COMPLETED/RUNNING
     },
     output: String
 });
 
-// Checking if model exists before defining to prevent overwrite errors
 const Job = mongoose.models.Job || mongoose.model("Job", JobSchema);
 
-const http = require('http');
-
-
-// This dummy server keeps Render happy so it doesn't kill the free service
+// Dummy Server for Render
 const server = http.createServer((req, res) => {
     res.writeHead(200);
     res.end('Worker is running!');
 });
-
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-    console.log(`Dummy server listening on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Worker listening on port ${PORT}`));
 
+// Redis Connection
 const connection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null
 });
 
-// 1. Robust DB Connection
+// Mongo Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Worker: MongoDB Connected"))
   .catch(err => console.error("❌ Worker: Mongo Connection Failed", err));
 
-// 2. The Safe Worker
+// Worker Logic
 new Worker(
   "code-execution", 
   async (jobTicket) => {
-    console.log(`[Job ${jobTicket.id}] Picked up. Processing...`);
+    console.log(`[Job ${jobTicket.id}] Data Received:`, jobTicket.data);
+    
+    const { jobId, code, language, input } = jobTicket.data;
+
+    if (!jobId) {
+        console.error(`[Job ${jobTicket.id}] ❌ ERROR: Job ID is missing! Cannot update DB.`);
+        return;
+    }
 
     try {
-      const { jobId, code, language ,input } = jobTicket.data;
-      
-      // Update status to RUNNING
-      await Job.findByIdAndUpdate(jobId, { status: "RUNNING" });
+      console.log(`[Job ${jobTicket.id}] Updating DB to RUNNING...`);
+      await Job.findByIdAndUpdate(jobId, { status: "RUNNING", startedAt: new Date() });
 
-      // Execute Code 
-      console.log(`[Job ${jobTicket.id}] Sending to Docker...`);
-      const executionResult = await runDocker(code,language,input);
-      console.log(`[Job ${jobTicket.id}] Docker finished.`);
+      console.log(`[Job ${jobTicket.id}] Executing ${language}...`);
+      const executionResult = await runCode(code, language, input);
 
-      // Update status to COMPLETED
-      await Job.findByIdAndUpdate(jobId, { 
+      console.log(`[Job ${jobTicket.id}] Execution Finished. Result:`, executionResult);
+
+      console.log(`[Job ${jobTicket.id}] Updating DB to COMPLETED...`);
+      const result = await Job.findByIdAndUpdate(jobId, { 
         status: "COMPLETED", 
+        completedAt: new Date(),
         output: executionResult 
       });
 
-      console.log(`[Job ${jobTicket.id}] ✅ Done.`);
+      // Check if update actually happened
+      if (!result) {
+        console.error(`[Job ${jobTicket.id}] ❌ CRITICAL: Could not find Job in DB with ID: ${jobId}`);
+      } else {
+        console.log(`[Job ${jobTicket.id}] ✅ DB Update Successful.`);
+      }
 
-    } catch (criticalError) {
-      console.error(`[Job ${jobTicket.id}] ❌ CRASHED:`, criticalError);
-
-      // Save the error to DB so you see it in the API response
-      const { jobId } = jobTicket.data;
+    } catch (err) {
+      console.error(`[Job ${jobTicket.id}] ❌ Worker Error:`, err);
       await Job.findByIdAndUpdate(jobId, { 
         status: "ERROR", 
-        output: JSON.stringify(criticalError.message) 
+        output: JSON.stringify(err.message) 
       });
     }
   },
-  {
-    connection
-  }
+  { connection }
 );
