@@ -3,7 +3,6 @@ import axios from "axios";
 import Editor from "@monaco-editor/react";
 import "./App.css";
 
-// ✅ FIX 1: Define the missing function here
 const getDefaultCodeTemplate = (language) => {
   switch (language) {
     case "cpp":
@@ -28,7 +27,25 @@ function App() {
 
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
 
-  // ✅ FIX 2: Consolidated "Load" Logic
+  //Loading the Saved language on initial mount
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedLanguage = localStorage.getItem("active_language");
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+      }
+    }
+  }, []); // Runs once on mount
+
+  // Saving the LANGUAGE whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("active_language", language);
+    }
+  }, [language]);
+
+
   // This runs only when the 'language' changes or on first load.
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -43,7 +60,6 @@ function App() {
     }
   }, [language]);
 
-  // ✅ FIX 3: Consolidated "Save" Logic (Debounced)
   // Saves automatically 500ms after you stop typing.
   useEffect(() => {
     const timeoutId = setTimeout(() => {
