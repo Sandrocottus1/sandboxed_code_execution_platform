@@ -12,7 +12,7 @@ function App(){
   const [status,setStatus]=useState("");
   const [jobId, setJobId]=useState(null);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
   
   const handleSubmit =async()=>{
     setOutput("");
@@ -28,7 +28,7 @@ function App(){
       setStatus("Processing...");
       pollJobStatus(data.jobId);
     }catch(err){
-      setOutput(err.reponse?.data?.error || "submission failed");
+      setOutput(err.response?.data?.error || "submission failed");
       setStatus("Error");
     }
   };
