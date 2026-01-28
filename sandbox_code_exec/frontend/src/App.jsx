@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
 import Editor from "@monaco-editor/react"
 import "./App.css";
@@ -14,6 +14,55 @@ function App(){
 
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
   
+  //Load : running this once when the page loads;
+
+  useEffect(() => {
+
+    if( typeof window!=="undefined"){
+      const savedCode=localStorage.getItem("autosave_code");
+      const savedOutput=localStorage.getItem("autosave_output");
+      if(savedCode) setCode(savedCode);
+      if(savedOutput) setOutput(savedOutput);
+    }
+  } ,[])
+
+
+  //Save: run this ever time 'code' or 'output' changes
+
+  useEffect(() => { 
+    if(typeof window!=="undefined"){
+      localStorage.setItem("autosave_code",code);
+      localStorage.setItem("autosave_output",output);
+    }
+    } ,[code,output]);
+
+
+    //Load code specific to the current language
+
+    useEffect(() => {
+      const savedCode=localStorage.getItem(`autosave_${language}`);
+      if(savedCode){
+        setCode(savedCode);
+      }else{
+        //if no saved code ,set a default template
+        setCode(getDefaultCodeTemplate(language));  
+      }
+
+    } ,[language]);//run whenever the language changes
+
+
+   // Save code specific to the curr language
+
+   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(`autosave_${language}`, code);
+    }, 500); // Debounce: Save only after user stops typing for 0.5s to save performance
+
+    return () => clearTimeout(timeoutId);
+  }, [code, language]);
+
+
+    //hanlding code submission
   const handleSubmit =async()=>{
     setOutput("");
     setStatus("Queueing...");
