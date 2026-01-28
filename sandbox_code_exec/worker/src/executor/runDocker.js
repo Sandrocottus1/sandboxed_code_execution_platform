@@ -97,7 +97,7 @@ module.exports = function runCode(code, language, input) {
     child.on("close", (exitCode) => {
       clearTimeout(timeout);
       cleanup();
-      
+      const finalOutput = (out + "\n" + err).trim();
       if (exitCode === 0) {
         resolve(out || "No Output.");
       } else {
