@@ -1,20 +1,22 @@
-# /worker/Dockerfile
-FROM node:20
+# Start with a lightweight Node.js image
+FROM node:18-slim
 
-# 1. Install curl so we can download files
-RUN apt-get update && apt-get install -y curl
+# Install the missing compilers: Python, G++ (for C++), and OpenJDK (for Java)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    g++ \
+    default-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
-# 2. Download the LATEST Docker CLI manually
-# This gets the official binary which is always up-to-date
-RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-26.1.3.tgz -o docker.tgz \
-    && tar xzvf docker.tgz --strip 1 -C /usr/local/bin docker/docker \
-    && rm docker.tgz
+# Set up the worker app
+WORKDIR /app
 
-WORKDIR /worker
-
+# Copy dependency files first (for faster builds)
 COPY package*.json ./
 RUN npm install
 
+# Copy the rest of the worker code
 COPY . .
 
+# Start the worker
 CMD ["node", "src/worker.js"]
