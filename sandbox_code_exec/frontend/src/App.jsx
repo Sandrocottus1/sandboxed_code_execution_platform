@@ -19,7 +19,7 @@ function App(){
     setStatus("Queueing...");
     //submition of code
     try{
-      const {data}=await axios.post("${API_URL}/api/submit",{
+      const {data}=await axios.post(`${API_URL}/api/submit`,{
         code,
         language,
         input
