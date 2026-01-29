@@ -30,12 +30,12 @@ The system is split into three distinct services to ensure scalability and separ
 
 ```mermaid
 graph LR
-    A[Client (React)] -- POST Code --> B[API Server (Node/Express)]
-    B -- Add Job --> C[(Redis Queue)]
-    C -- Pop Job --> D[Worker Service]
-    D -- Execute --> E{Safe Sandbox}
+    A["Client (React)"] -- POST Code --> B["API Server (Node/Express)"]
+    B -- Add Job --> C[("Redis Queue")]
+    C -- Pop Job --> D["Worker Service"]
+    D -- Execute --> E{"Safe Sandbox"}
     E -- Output/Error --> D
-    D -- Update Status --> F[(MongoDB)]
+    D -- Update Status --> F[("MongoDB")]
     A -- Poll Status --> B
     B -- Query --> F
 ```
