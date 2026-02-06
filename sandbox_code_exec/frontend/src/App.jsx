@@ -17,6 +17,37 @@ const getDefaultCodeTemplate = (language) => {
   }
 };
 
+const SunIcon = () => (
+  <svg
+    className="theme-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="12" cy="12" r="4" fill="currentColor" />
+    <path
+      d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg
+    className="theme-icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M20.5 14.5a7.5 7.5 0 1 1-8-11 8.5 8.5 0 1 0 8 11z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 function App() {
   const [code, setCode] = useState("// Write your code here...");
   const [input, setInput] = useState("");
@@ -149,7 +180,10 @@ function App() {
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="theme-toggle"
             >
-              {theme === "dark" ? "Light mode" : "Dark mode"}
+              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+              <span className="theme-label">
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </span>
             </button>
             <select
               value={language}

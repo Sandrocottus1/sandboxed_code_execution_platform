@@ -103,6 +103,9 @@ body[data-theme="light"] {
 }
 
 .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
@@ -117,6 +120,28 @@ body[data-theme="light"] {
 .theme-toggle:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  animation: theme-icon-pop 240ms ease;
+}
+
+@keyframes theme-icon-pop {
+  0% {
+    transform: rotate(-12deg) scale(0.9);
+    opacity: 0.2;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.theme-label {
+  line-height: 1;
 }
 
 .lang-select {
