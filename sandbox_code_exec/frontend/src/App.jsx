@@ -110,62 +110,90 @@ function App() {
     }, 1000);
   };
 
-  return (
-    <div className="container">
-      <h1>Remote Code Executor</h1>
-      <div className="control-panel">
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="lang-select"
-        >
-          <option value="python">Python</option>
-          <option value="javascript">Javascript</option>
-          <option value="cpp">C++</option>
-          <option value="java">Java</option>
-        </select>
-        <button
-          onClick={handleSubmit}
-          disabled={status === "Processing..."}
-          className="run-btn"
-        >
-          {status === "Processing..." ? "Running..." : "Run Code"}
-        </button>
-      </div>
-      <div className="editor-layout">
-        <div className="editor-box">
-          <Editor
-            height="100%"
-            defaultLanguage="python"
-            language={language}
-            value={code}
-            onChange={(value) => setCode(value)}
-            theme="vs-dark"
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              automaticLayout: true,
-              scrollBeyondLastLine: false,
-            }}
-          />
-        </div>
+  const statusClass = status === "ERROR"
+    ? "status-pill is-error"
+    : status === "COMPLETED"
+    ? "status-pill is-success"
+    : status === "Processing..."
+    ? "status-pill is-running"
+    : "status-pill";
 
-        <div className="io-box">
-          <div className="input-section">
-            <h3>Input (stdin)</h3>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter your input here..."
-            />
+  return (
+    <div className="app">
+      <div className="app-shell">
+        <header className="app-header">
+          <div className="title-block">
+            <h1>Remote Code Executor</h1>
+            <p>Run code securely in the cloud with live output.</p>
           </div>
-          <div className="output-section">
-            <h3>Output</h3>
-            <pre className={status === "ERROR" ? "error-text" : ""}>
-              {output || "Output will appear here...!"}
-            </pre>
-            <span className="status-badge">Status: {status || "Idle"}</span>
+          <div className="control-panel">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="lang-select"
+            >
+              <option value="python">Python</option>
+              <option value="javascript">Javascript</option>
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+            </select>
+            <button
+              onClick={handleSubmit}
+              disabled={status === "Processing..."}
+              className="run-btn"
+            >
+              {status === "Processing..." ? "Running..." : "Run Code"}
+            </button>
           </div>
+        </header>
+
+        <div className="workspace">
+          <section className="editor-panel">
+            <div className="panel-header">
+              <h2>Editor</h2>
+              <span className="hint">Autosaves by language</span>
+            </div>
+            <div className="editor-box">
+              <Editor
+                height="100%"
+                defaultLanguage="python"
+                language={language}
+                value={code}
+                onChange={(value) => setCode(value)}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
+          </section>
+
+          <section className="side-panel">
+            <div className="panel-card input-section">
+              <div className="panel-header">
+                <h3>Input (stdin)</h3>
+                <span className="pill">Optional</span>
+              </div>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Enter your input here..."
+              />
+            </div>
+
+            <div className="panel-card output-section">
+              <div className="panel-header">
+                <h3>Output</h3>
+                <span className={statusClass}>{status || "Idle"}</span>
+              </div>
+              <pre className={status === "ERROR" ? "error-text" : ""}>
+                {output || "Output will appear here..."}
+              </pre>
+            </div>
+          </section>
         </div>
       </div>
     </div>
