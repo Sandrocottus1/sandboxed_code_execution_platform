@@ -179,11 +179,9 @@ function App() {
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="theme-toggle"
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
               {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-              <span className="theme-label">
-                {theme === "dark" ? "Light mode" : "Dark mode"}
-              </span>
             </button>
             <select
               value={language}
