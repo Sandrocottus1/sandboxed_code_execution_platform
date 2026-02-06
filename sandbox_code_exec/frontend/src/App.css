@@ -102,6 +102,7 @@ h1 {
   flex-direction: column;
   flex: 1; /* Share vertical space 50/50 */
   min-height: 0;
+  overflow: hidden; /* Keep content from forcing parent to grow */
 }
 
 h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
@@ -124,6 +125,7 @@ pre {
   font-family: 'Consolas', monospace;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   margin: 0; /* 👈 Add this to stop layout jumping */
 }
 
