@@ -21,6 +21,7 @@ function App() {
   const [code, setCode] = useState("// Write your code here...");
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState("python");
+  const [theme, setTheme] = useState("dark");
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
@@ -38,12 +39,28 @@ function App() {
     }
   }, []); // Runs once on mount
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("active_theme");
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    }
+  }, []);
+
   // Saving the LANGUAGE whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("active_language", language);
     }
   }, [language]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.body.dataset.theme = theme;
+      localStorage.setItem("active_theme", theme);
+    }
+  }, [theme]);
 
 
   // This runs only when the 'language' changes or on first load.
@@ -127,6 +144,13 @@ function App() {
             <p>Run code securely in the cloud with live output.</p>
           </div>
           <div className="control-panel">
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="theme-toggle"
+            >
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -160,7 +184,7 @@ function App() {
                 language={language}
                 value={code}
                 onChange={(value) => setCode(value)}
-                theme="vs-dark"
+                theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
                   minimap: { enabled: false },
                   fontSize: 14,
