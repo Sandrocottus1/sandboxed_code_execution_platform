@@ -46,6 +46,7 @@ body {
     radial-gradient(900px 600px at 90% -20%, #1c2b23, transparent 55%),
     linear-gradient(160deg, var(--bg-0), var(--bg-1));
   overflow: hidden;
+  transition: background 480ms ease, color 480ms ease;
 }
 
 body[data-theme="light"] {
@@ -82,6 +83,7 @@ body[data-theme="light"] {
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: var(--shadow);
+  transition: background 480ms ease, border-color 480ms ease, box-shadow 480ms ease;
 }
 
 .title-block h1 {
@@ -114,7 +116,8 @@ body[data-theme="light"] {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease,
+    color 480ms ease, background-color 480ms ease, box-shadow 480ms ease;
 }
 
 .theme-toggle:hover {
@@ -126,7 +129,7 @@ body[data-theme="light"] {
   width: 18px;
   height: 18px;
   display: block;
-  animation: theme-icon-pop 240ms ease;
+  animation: theme-icon-pop 520ms ease;
 }
 
 @keyframes theme-icon-pop {
@@ -151,6 +154,7 @@ body[data-theme="light"] {
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 0.95rem;
+  transition: background-color 480ms ease, color 480ms ease, border-color 480ms ease;
 }
 
 .run-btn {
@@ -163,7 +167,8 @@ body[data-theme="light"] {
   font-size: 0.95rem;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(43, 192, 122, 0.3);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background-color 480ms ease, color 480ms ease;
 }
 
 .run-btn:hover {
@@ -220,6 +225,7 @@ body[data-theme="light"] {
   border: 1px solid var(--border);
   background: #0b0e14;
   box-shadow: var(--shadow);
+  transition: background 480ms ease, border-color 480ms ease, box-shadow 480ms ease;
 }
 
 body[data-theme="light"] .editor-box {
@@ -244,6 +250,7 @@ body[data-theme="light"] .editor-box {
   flex: 1;
   min-height: 0;
   box-shadow: var(--shadow);
+  transition: background-color 480ms ease, border-color 480ms ease, box-shadow 480ms ease;
 }
 
 .pill {
@@ -288,6 +295,7 @@ textarea {
   padding: 12px;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.85rem;
+  transition: background-color 480ms ease, color 480ms ease, border-color 480ms ease;
 }
 
 pre {
@@ -302,6 +310,7 @@ pre {
   font-size: 0.85rem;
   white-space: pre-wrap;
   overflow: auto;
+  transition: background-color 480ms ease, color 480ms ease;
 }
 
 body[data-theme="light"] pre {
