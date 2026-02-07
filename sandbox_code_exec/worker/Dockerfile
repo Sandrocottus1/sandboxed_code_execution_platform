@@ -1,5 +1,5 @@
 # Start with a lightweight Node.js image
-FROM node:18-slim
+FROM node:20-slim
 
 # Install the missing compilers: Python, G++ (for C++), and OpenJDK (for Java)
 RUN apt-get update && apt-get install -y \
