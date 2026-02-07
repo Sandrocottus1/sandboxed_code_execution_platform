@@ -14,6 +14,16 @@ module.exports = function runCode(code, language, input) {
 
     // 1. Configure Language Settings (Local Paths)
     switch (language) {
+      case "go":
+        filename = path.join(__dirname, `${jobId}.go`);
+        runCommand = "sh";
+        args = ["-c", `go build -o "${jobId}.out" "${filename}" && "${path.join(__dirname, `${jobId}.out`)}"`];
+        break;
+      case "c":
+        filename = path.join(__dirname, `${jobId}.c`);
+        runCommand = "sh";
+        args = ["-c", `gcc "${filename}" -o "${jobId}.out" && "${path.join(__dirname, `${jobId}.out`)}"`];
+        break;
       case "python":
         filename = path.join(__dirname, `${jobId}.py`);
         runCommand = "python3"; // Or 'python' depending on environment
@@ -83,8 +93,8 @@ module.exports = function runCode(code, language, input) {
     const cleanup = () => {
         // Try deleting the source file
         if (fs.existsSync(filename)) fs.unlinkSync(filename);
-        // If C++, try deleting the executable
-        if (language === 'cpp' && fs.existsSync(path.join(__dirname, `${jobId}.out`))) {
+      // If compiled language, try deleting the executable
+      if (["cpp", "c", "go"].includes(language) && fs.existsSync(path.join(__dirname, `${jobId}.out`))) {
             fs.unlinkSync(path.join(__dirname, `${jobId}.out`));
         }
         // If Java, try deleting the class file

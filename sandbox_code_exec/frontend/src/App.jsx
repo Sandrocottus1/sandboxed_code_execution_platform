@@ -5,6 +5,10 @@ import "./App.css";
 
 const getDefaultCodeTemplate = (language) => {
   switch (language) {
+    case "go":
+      return `package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello World")\n}`;
+    case "c":
+      return `#include <stdio.h>\n\nint main() {\n    printf("Hello World\\n");\n    return 0;\n}`;
     case "cpp":
       return `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World" << endl;\n    return 0;\n}`;
     case "java":
@@ -188,6 +192,8 @@ function App() {
               onChange={(e) => setLanguage(e.target.value)}
               className="lang-select"
             >
+              <option value="go">Go</option>
+              <option value="c">C</option>
               <option value="python">Python</option>
               <option value="javascript">Javascript</option>
               <option value="cpp">C++</option>

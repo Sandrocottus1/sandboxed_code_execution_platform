@@ -5,7 +5,9 @@ FROM node:18-slim
 RUN apt-get update && apt-get install -y \
     python3 \
     g++ \
+    gcc \
     default-jdk \
+    golang \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up the worker app
