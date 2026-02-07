@@ -16,13 +16,15 @@ module.exports = function runCode(code, language, input) {
     switch (language) {
       case "go":
         filename = path.join(__dirname, `${jobId}.go`);
+        const goOut = path.join(__dirname, `${jobId}.out`);
         runCommand = "sh";
-        args = ["-c", `go build -o "${jobId}.out" "${filename}" && "${path.join(__dirname, `${jobId}.out`)}"`];
+        args = ["-c", `go build -o "${goOut}" "${filename}" && "${goOut}"`];
         break;
       case "c":
         filename = path.join(__dirname, `${jobId}.c`);
+        const cOut = path.join(__dirname, `${jobId}.out`);
         runCommand = "sh";
-        args = ["-c", `gcc "${filename}" -o "${jobId}.out" && "${path.join(__dirname, `${jobId}.out`)}"`];
+        args = ["-c", `gcc "${filename}" -o "${cOut}" && "${cOut}"`];
         break;
       case "python":
         filename = path.join(__dirname, `${jobId}.py`);
