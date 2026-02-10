@@ -236,7 +236,6 @@ declare const __filename: string;`,
       "if",
       "elif",
       "else",
-      "for",
       "while",
       "try",
       "except",
@@ -279,11 +278,14 @@ declare const __filename: string;`,
         ...pythonKeywords.map((keyword) =>
           toSuggestion(keyword, monaco.languages.CompletionItemKind.Keyword, keyword)
         ),
-        toSuggestion(
-          "for",
-          monaco.languages.CompletionItemKind.Snippet,
-          "for ${1:i} in range(${2:n}):\n    ${3}"
-        ),
+        {
+          ...toSuggestion(
+            "for",
+            monaco.languages.CompletionItemKind.Snippet,
+            "for ${1:i} in range(${2:n}):\n    ${3}"
+          ),
+          sortText: "0000",
+        },
         toSuggestion(
           "def",
           monaco.languages.CompletionItemKind.Snippet,
@@ -424,6 +426,8 @@ declare const __filename: string;`,
                   tabCompletion: "on",
                   inlineSuggest: { enabled: true },
                   acceptSuggestionOnEnter: "on",
+                  suggestSelection: "first",
+                  wordBasedSuggestions: "off",
                 }}
               />
             </div>
