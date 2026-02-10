@@ -180,37 +180,120 @@ function App() {
 
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
       allowNonTsExtensions: true,
+      allowJs: true,
+      checkJs: true,
+      lib: ["es2020", "dom"],
       target: monaco.languages.typescript.ScriptTarget.ES2020,
     });
 
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+      `declare const require: (path: string) => any;
+declare const module: { exports: any };
+declare const process: { env: Record<string, string | undefined> };
+declare const __dirname: string;
+declare const __filename: string;`,
+      "ts:node-globals.d.ts"
+    );
+
+    const toSuggestion = (label, kind, insertText) => ({
+      label,
+      kind,
+      insertText,
+      insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+    });
+
+    const pythonBuiltins = [
+      "abs",
+      "all",
+      "any",
+      "bool",
+      "dict",
+      "enumerate",
+      "float",
+      "int",
+      "len",
+      "list",
+      "map",
+      "max",
+      "min",
+      "print",
+      "range",
+      "set",
+      "sorted",
+      "str",
+      "sum",
+      "tuple",
+      "zip",
+    ];
+
+    const pythonKeywords = [
+      "def",
+      "class",
+      "return",
+      "import",
+      "from",
+      "as",
+      "if",
+      "elif",
+      "else",
+      "for",
+      "while",
+      "try",
+      "except",
+      "with",
+      "lambda",
+    ];
+
     const completionSets = {
       javascript: [
-        {
-          label: "console.log",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "console.log(${1});",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "for",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n  ${3}\n}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        toSuggestion(
+          "console.log",
+          monaco.languages.CompletionItemKind.Function,
+          "console.log(${1});"
+        ),
+        toSuggestion(
+          "fetch",
+          monaco.languages.CompletionItemKind.Function,
+          "fetch(${1:url}).then(res => res.json()).then(data => {\n  ${2}\n});"
+        ),
+        toSuggestion(
+          "for",
+          monaco.languages.CompletionItemKind.Snippet,
+          "for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n  ${3}\n}"
+        ),
+        toSuggestion(
+          "async function",
+          monaco.languages.CompletionItemKind.Snippet,
+          "async function ${1:name}(${2:args}) {\n  ${3}\n}"
+        ),
+        toSuggestion(
+          "try/catch",
+          monaco.languages.CompletionItemKind.Snippet,
+          "try {\n  ${1}\n} catch (${2:err}) {\n  ${3}\n}"
+        ),
       ],
       python: [
-        {
-          label: "print",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "print(${1})",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "for",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "for ${1:i} in range(${2:n}):\n    ${3}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        ...pythonBuiltins.map((name) =>
+          toSuggestion(name, monaco.languages.CompletionItemKind.Function, `${name}(${1})`)
+        ),
+        ...pythonKeywords.map((keyword) =>
+          toSuggestion(keyword, monaco.languages.CompletionItemKind.Keyword, keyword)
+        ),
+        toSuggestion(
+          "for",
+          monaco.languages.CompletionItemKind.Snippet,
+          "for ${1:i} in range(${2:n}):\n    ${3}"
+        ),
+        toSuggestion(
+          "def",
+          monaco.languages.CompletionItemKind.Snippet,
+          "def ${1:func}(${2:args}):\n    ${3}"
+        ),
+        toSuggestion(
+          "if",
+          monaco.languages.CompletionItemKind.Snippet,
+          "if ${1:condition}:\n    ${2}\nelse:\n    ${3}"
+        ),
       ],
       go: [
         {
