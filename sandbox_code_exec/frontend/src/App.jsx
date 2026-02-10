@@ -286,16 +286,86 @@ declare const __filename: string;`,
           ),
           sortText: "0000",
         },
-        toSuggestion(
-          "def",
-          monaco.languages.CompletionItemKind.Snippet,
-          "def ${1:func}(${2:args}):\n    ${3}"
-        ),
-        toSuggestion(
-          "if",
-          monaco.languages.CompletionItemKind.Snippet,
-          "if ${1:condition}:\n    ${2}\nelse:\n    ${3}"
-        ),
+        {
+          ...toSuggestion(
+            "def",
+            monaco.languages.CompletionItemKind.Snippet,
+            "def ${1:func}(${2:args}):\n    ${3}"
+          ),
+          sortText: "0001",
+        },
+        {
+          ...toSuggestion(
+            "if",
+            monaco.languages.CompletionItemKind.Snippet,
+            "if ${1:condition}:\n    ${2}\nelse:\n    ${3}"
+          ),
+          sortText: "0002",
+        },
+        {
+          ...toSuggestion(
+            "elif",
+            monaco.languages.CompletionItemKind.Snippet,
+            "elif ${1:condition}:\n    ${2}"
+          ),
+          sortText: "0003",
+        },
+        {
+          ...toSuggestion(
+            "while",
+            monaco.languages.CompletionItemKind.Snippet,
+            "while ${1:condition}:\n    ${2}"
+          ),
+          sortText: "0004",
+        },
+        {
+          ...toSuggestion(
+            "try",
+            monaco.languages.CompletionItemKind.Snippet,
+            "try:\n    ${1}\nexcept ${2:Exception} as ${3:e}:\n    ${4}"
+          ),
+          sortText: "0005",
+        },
+        {
+          ...toSuggestion(
+            "with",
+            monaco.languages.CompletionItemKind.Snippet,
+            "with ${1:open(${2:\"file.txt\"})} as ${3:f}:\n    ${4}"
+          ),
+          sortText: "0006",
+        },
+        {
+          ...toSuggestion(
+            "class",
+            monaco.languages.CompletionItemKind.Snippet,
+            "class ${1:ClassName}(${2:object}):\n    def __init__(self, ${3:args}):\n        ${4:pass}"
+          ),
+          sortText: "0007",
+        },
+        {
+          ...toSuggestion(
+            "list comprehension",
+            monaco.languages.CompletionItemKind.Snippet,
+            "[${1:expr} for ${2:x} in ${3:iterable}]"
+          ),
+          sortText: "0008",
+        },
+        {
+          ...toSuggestion(
+            "dict comprehension",
+            monaco.languages.CompletionItemKind.Snippet,
+            "{${1:key}: ${2:value} for ${3:k}, ${4:v} in ${5:iterable}}"
+          ),
+          sortText: "0009",
+        },
+        {
+          ...toSuggestion(
+            "f-string",
+            monaco.languages.CompletionItemKind.Snippet,
+            "f\"${1:var} = {${2:value}}\""
+          ),
+          sortText: "0010",
+        },
       ],
       go: [
         {
