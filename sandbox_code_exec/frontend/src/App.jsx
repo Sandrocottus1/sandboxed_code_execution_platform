@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Editor from "@monaco-editor/react";
 import "./App.css";
@@ -60,6 +60,7 @@ function App() {
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
+  const monacoInitializedRef = useRef(false);
 
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
 
@@ -170,6 +171,112 @@ function App() {
     ? "status-pill is-running"
     : "status-pill";
 
+  const setupIntellisense = (monaco) => {
+    if (monacoInitializedRef.current) {
+      return;
+    }
+
+    monacoInitializedRef.current = true;
+
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      allowNonTsExtensions: true,
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
+    });
+
+    const completionSets = {
+      javascript: [
+        {
+          label: "console.log",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "console.log(${1});",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "for",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n  ${3}\n}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+      python: [
+        {
+          label: "print",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "print(${1})",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "for",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "for ${1:i} in range(${2:n}):\n    ${3}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+      go: [
+        {
+          label: "fmt.Println",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "fmt.Println(${1})",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "main",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "func main() {\n    ${1}\n}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+      c: [
+        {
+          label: "printf",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "printf(\"${1}\\n\");",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "main",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "int main() {\n    ${1}\n    return 0;\n}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+      cpp: [
+        {
+          label: "cout",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "std::cout << ${1} << std::endl;",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "main",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "int main() {\n    ${1}\n    return 0;\n}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+      java: [
+        {
+          label: "System.out.println",
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: "System.out.println(${1});",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+        {
+          label: "main",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "public static void main(String[] args) {\n    ${1}\n}",
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+        },
+      ],
+    };
+
+    Object.entries(completionSets).forEach(([lang, suggestions]) => {
+      monaco.languages.registerCompletionItemProvider(lang, {
+        provideCompletionItems: () => ({ suggestions }),
+      });
+    });
+  };
+
   return (
     <div className="app">
       <div className="app-shell">
@@ -222,12 +329,16 @@ function App() {
                 language={language}
                 value={code}
                 onChange={(value) => setCode(value)}
+                onMount={(_, monaco) => setupIntellisense(monaco)}
                 theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
                   minimap: { enabled: false },
                   fontSize: 14,
                   automaticLayout: true,
                   scrollBeyondLastLine: false,
+                  quickSuggestions: true,
+                  suggestOnTriggerCharacters: true,
+                  tabCompletion: "on",
                 }}
               />
             </div>
