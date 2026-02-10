@@ -422,6 +422,8 @@ declare const __filename: string;`,
                   quickSuggestions: true,
                   suggestOnTriggerCharacters: true,
                   tabCompletion: "on",
+                  inlineSuggest: { enabled: true },
+                  acceptSuggestionOnEnter: "on",
                 }}
               />
             </div>
