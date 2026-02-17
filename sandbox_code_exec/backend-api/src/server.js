@@ -1,6 +1,8 @@
 require("dotenv").config();
 const app = require("./app");
 const connectDB = require("./db");
+const { setupPythonLspServer } = require("./lsp/pythonLspServer");
+const { setupJobStreamServer } = require("./stream/jobStreamServer");
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,9 +12,12 @@ if (!process.env.MONGO_URI) {
 }
 
 // 2. Start the Server FIRST
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Server running on port ${PORT}`);
 });
+
+setupPythonLspServer(server);
+setupJobStreamServer(server);
 
 // 3. Connect to Database Asynchronously
 connectDB()

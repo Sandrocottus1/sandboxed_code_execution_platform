@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Editor from "@monaco-editor/react";
 import "./App.css";
+import { setupPythonLanguageClient } from "./lsp/pythonClient";
+
+const toWsUrl = (httpUrl) => httpUrl.replace(/^http/, "ws");
 
 const getDefaultCodeTemplate = (language) => {
   switch (language) {
@@ -61,6 +64,9 @@ function App() {
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
   const monacoInitializedRef = useRef(false);
+  const pythonClientRef = useRef(null);
+  const outputStreamRef = useRef(null);
+  const streamFinishedRef = useRef(false);
 
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
 
@@ -126,7 +132,7 @@ function App() {
   // Handling code submission
   const handleSubmit = async () => {
     setOutput("");
-    setStatus("Queueing...");
+    setStatus("QUEUED");
     
     try {
       const { data } = await axios.post(`${API_URL}/api/submit`, {
@@ -135,12 +141,71 @@ function App() {
         input
       });
       setJobId(data.jobId);
-      setStatus("Processing...");
-      pollJobStatus(data.jobId);
+      startOutputStream(data.jobId);
     } catch (err) {
       setOutput(err.response?.data?.error || "Submission failed");
-      setStatus("Error");
+      setStatus("ERROR");
     }
+  };
+
+  const startOutputStream = (id) => {
+    if (outputStreamRef.current) {
+      outputStreamRef.current.close();
+      outputStreamRef.current = null;
+    }
+
+    streamFinishedRef.current = false;
+
+    const ws = new WebSocket(`${toWsUrl(API_URL)}/ws/jobs?jobId=${id}`);
+    outputStreamRef.current = ws;
+
+    const fallbackTimer = setTimeout(() => {
+      if (!streamFinishedRef.current && ws.readyState !== WebSocket.OPEN) {
+        pollJobStatus(id);
+      }
+    }, 1500);
+
+    ws.onopen = () => {
+      setStatus("RUNNING");
+    };
+
+    ws.onmessage = (event) => {
+      let payload = null;
+
+      try {
+        payload = JSON.parse(event.data);
+      } catch (err) {
+        setOutput((prev) => prev + event.data);
+        return;
+      }
+
+      if (payload.type === "output") {
+        const prefix = payload.stream === "stderr" ? "[stderr] " : "[stdout] ";
+        setOutput((prev) => prev + prefix + payload.text);
+        return;
+      }
+
+      if (payload.type === "status" && payload.status) {
+        setStatus(payload.status);
+        return;
+      }
+
+      if (payload.type === "end") {
+        streamFinishedRef.current = true;
+        setStatus(payload.exitCode === 0 ? "COMPLETED" : "ERROR");
+        ws.close();
+      }
+    };
+
+    const handleStreamClose = () => {
+      clearTimeout(fallbackTimer);
+      if (!streamFinishedRef.current) {
+        pollJobStatus(id);
+      }
+    };
+
+    ws.onclose = handleStreamClose;
+    ws.onerror = handleStreamClose;
   };
 
   // Polling status
@@ -158,7 +223,7 @@ function App() {
       } catch (err) {
         clearInterval(intervalId);
         setOutput("Error polling job status");
-        setStatus("Error");
+        setStatus("ERROR");
       }
     }, 1000);
   };
@@ -167,7 +232,7 @@ function App() {
     ? "status-pill is-error"
     : status === "COMPLETED"
     ? "status-pill is-success"
-    : status === "Processing..."
+    : status === "RUNNING"
     ? "status-pill is-running"
     : "status-pill";
 
@@ -484,7 +549,10 @@ declare const __filename: string;`,
                 language={language}
                 value={code}
                 onChange={(value) => setCode(value)}
-                onMount={(_, monaco) => setupIntellisense(monaco)}
+                onMount={(_, monaco) => {
+                  setupIntellisense(monaco);
+                  setupPythonLanguageClient(monaco, API_URL, pythonClientRef);
+                }}
                 theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
                   minimap: { enabled: false },

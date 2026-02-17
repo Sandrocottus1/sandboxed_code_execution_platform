@@ -5,12 +5,18 @@ const path = require("path");
 // Helper to generate random file names
 const randomId = () => Math.random().toString(36).substring(7);
 
-module.exports = function runCode(code, language, input) {
+module.exports = function runCode(code, language, input, onChunk) {
   return new Promise((resolve) => {
     const jobId = randomId();
     let filename = "";
     let runCommand = "";
     let args = [];
+
+    const emit = (payload) => {
+      if (typeof onChunk === "function") {
+        onChunk(payload);
+      }
+    };
 
     // 1. Configure Language Settings (Local Paths)
     switch (language) {
@@ -88,8 +94,16 @@ module.exports = function runCode(code, language, input) {
     }
 
     // 6. Capture Output
-    child.stdout.on("data", (chunk) => { out += chunk.toString(); });
-    child.stderr.on("data", (chunk) => { err += chunk.toString(); });
+    child.stdout.on("data", (chunk) => {
+      const text = chunk.toString();
+      out += text;
+      emit({ type: "output", stream: "stdout", text, timestamp: Date.now() });
+    });
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      err += text;
+      emit({ type: "output", stream: "stderr", text, timestamp: Date.now() });
+    });
 
     // 7. Cleanup Function
     const cleanup = () => {
@@ -109,6 +123,7 @@ module.exports = function runCode(code, language, input) {
     child.on("close", (exitCode) => {
       clearTimeout(timeout);
       cleanup();
+      emit({ type: "end", exitCode, timestamp: Date.now() });
       const finalOutput = (out + "\n" + err).trim();
       if (exitCode === 0) {
         resolve(out || "No Output.");
@@ -121,6 +136,7 @@ module.exports = function runCode(code, language, input) {
     child.on("error", (error) => {
         clearTimeout(timeout);
         cleanup();
+      emit({ type: "error", message: error.message, timestamp: Date.now() });
         resolve(`Execution Error: ${error.message} (Is the language installed?)`);
     });
   });

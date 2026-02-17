@@ -35,6 +35,17 @@ const connection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null
 });
 
+const outputPublisher = new IORedis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null
+});
+
+const publishJobUpdate = (jobId, payload) => {
+  if (!jobId) {
+    return;
+  }
+  outputPublisher.publish(`job:${jobId}`, JSON.stringify(payload));
+};
+
 // Mongo Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Worker: MongoDB Connected"))
@@ -56,9 +67,12 @@ new Worker(
     try {
       console.log(`[Job ${jobTicket.id}] Updating DB to RUNNING...`);
       await Job.findByIdAndUpdate(jobId, { status: "RUNNING", startedAt: new Date() });
+      publishJobUpdate(jobId, { type: "status", status: "RUNNING", timestamp: Date.now() });
 
       console.log(`[Job ${jobTicket.id}] Executing ${language}...`);
-      const executionResult = await runCode(code, language, input);
+      const executionResult = await runCode(code, language, input, (payload) => {
+        publishJobUpdate(jobId, payload);
+      });
 
       console.log(`[Job ${jobTicket.id}] Execution Finished. Result:`, executionResult);
 
@@ -68,6 +82,7 @@ new Worker(
         completedAt: new Date(),
         output: executionResult 
       });
+      publishJobUpdate(jobId, { type: "status", status: "COMPLETED", timestamp: Date.now() });
 
       // Check if update actually happened
       if (!result) {
@@ -82,6 +97,7 @@ new Worker(
         status: "ERROR", 
         output: JSON.stringify(err.message) 
       });
+      publishJobUpdate(jobId, { type: "status", status: "ERROR", message: err.message, timestamp: Date.now() });
     }
   },
   { connection }
