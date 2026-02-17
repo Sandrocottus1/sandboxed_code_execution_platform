@@ -2,9 +2,9 @@ import {
   CloseAction,
   ErrorAction,
   MonacoLanguageClient,
-  MonacoServices,
   createConnection,
 } from "monaco-languageclient";
+import { MonacoServices } from "monaco-languageclient/monaco-services";
 import {
   WebSocketMessageReader,
   WebSocketMessageWriter,
