@@ -64,7 +64,8 @@ function App() {
   const [jobId, setJobId] = useState(null);
   const monacoInitializedRef = useRef(false);
   const monacoEditorRef = useRef(null);
-  const editorViewStates = useRef({});
+  const monacoRef = useRef(null);
+  const languageModelsRef = useRef({});
   const outputStreamRef = useRef(null);
   const streamFinishedRef = useRef(false);
 
@@ -93,13 +94,6 @@ function App() {
   // Saving the LANGUAGE whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Save current editor view state before changing language
-      if (monacoEditorRef.current) {
-        const currentLang = localStorage.getItem("active_language");
-        if (currentLang) {
-          editorViewStates.current[currentLang] = monacoEditorRef.current.saveViewState();
-        }
-      }
       localStorage.setItem("active_language", language);
     }
   }, [language]);
@@ -116,19 +110,27 @@ function App() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCode = localStorage.getItem(`autosave_${language}`);
+      const newCode = savedCode || getDefaultCodeTemplate(language);
+      setCode(newCode);
       
-      if (savedCode) {
-        setCode(savedCode);
-      } else {
-        setCode(getDefaultCodeTemplate(language)); 
-      }
-      
-      // Restore view state for the new language after a short delay
-      if (monacoEditorRef.current && editorViewStates.current[language]) {
-        setTimeout(() => {
-          monacoEditorRef.current?.restoreViewState(editorViewStates.current[language]);
-          monacoEditorRef.current?.focus();
-        }, 50);
+      // Switch to the model for this language if editor and monaco are ready
+      if (monacoEditorRef.current && monacoRef.current) {
+        let model = languageModelsRef.current[language];
+        
+        if (!model) {
+          // Create a new model for this language
+          const uri = monacoRef.current.Uri.parse(`inmemory://model/${language}`);
+          model = monacoRef.current.editor.createModel(newCode, language, uri);
+          languageModelsRef.current[language] = model;
+        } else {
+          // Update existing model if code changed
+          if (model.getValue() !== newCode) {
+            model.setValue(newCode);
+          }
+        }
+        
+        // Switch editor to use this language's model
+        monacoEditorRef.current.setModel(model);
       }
     }
   }, [language]);
@@ -566,6 +568,15 @@ declare const __filename: string;`,
                 onChange={(value) => setCode(value)}
                 onMount={(editor, monaco) => {
                   monacoEditorRef.current = editor;
+                  monacoRef.current = monaco;
+                  
+                  // Create initial model for the current language
+                  const initialCode = code || getDefaultCodeTemplate(language);
+                  const uri = monaco.Uri.parse(`inmemory://model/${language}`);
+                  const model = monaco.editor.createModel(initialCode, language, uri);
+                  languageModelsRef.current[language] = model;
+                  editor.setModel(model);
+                  
                   setupIntellisense(monaco);
                 }}
                 theme={theme === "dark" ? "vs-dark" : "light"}

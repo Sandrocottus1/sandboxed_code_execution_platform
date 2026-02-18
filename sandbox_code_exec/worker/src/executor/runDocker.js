@@ -39,10 +39,16 @@ module.exports = function runCode(code, language, input, onChunk) {
         break;
       case "javascript":
         filename = path.join(__dirname, `${jobId}.js`);
-        // Prepend code to force stdout flushing after each console.log
-        const wrappedCode = `const { stdout } = require('process');
-const _log = console.log;
-console.log = (...args) => { _log(...args); stdout.write(''); };
+        // Wrap code to force immediate flushing of console.log output
+        const wrappedCode = `process.stdout._handle.setBlocking(true);
+const originalLog = console.log;
+console.log = function(...args) {
+  originalLog.apply(console, args);
+  if (process.stdout.write('')) {
+    process.stdout._handle.setBlocking(false);
+    process.stdout._handle.setBlocking(true);
+  }
+};
 
 ${code}`;
         fs.writeFileSync(filename, wrappedCode);
