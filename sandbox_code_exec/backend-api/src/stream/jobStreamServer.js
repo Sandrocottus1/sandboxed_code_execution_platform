@@ -1,5 +1,6 @@
 const IORedis = require("ioredis");
 const { WebSocketServer } = require("ws");
+const Job = require("../models/Job.model");
 
 const createRedisClient = () =>
   new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
@@ -39,9 +40,23 @@ const setupJobStreamServer = (server) => {
       socket.send(message);
     });
 
-    subscriber.subscribe(channel).then(() => {
+    subscriber.subscribe(channel).then(async () => {
       if (socket.readyState === socket.OPEN) {
         socket.send(JSON.stringify({ type: "ready", jobId, timestamp: Date.now() }));
+        
+        // Send current job status immediately after subscribing
+        try {
+          const job = await Job.findById(jobId);
+          if (job && job.status) {
+            socket.send(JSON.stringify({ 
+              type: "status", 
+              status: job.status, 
+              timestamp: Date.now() 
+            }));
+          }
+        } catch (err) {
+          console.error(`Error fetching initial job status for ${jobId}:`, err);
+        }
       }
     });
 
