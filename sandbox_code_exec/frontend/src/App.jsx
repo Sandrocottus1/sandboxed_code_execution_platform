@@ -64,6 +64,7 @@ function App() {
   const [jobId, setJobId] = useState(null);
   const monacoInitializedRef = useRef(false);
   const monacoEditorRef = useRef(null);
+  const editorViewStates = useRef({});
   const outputStreamRef = useRef(null);
   const streamFinishedRef = useRef(false);
 
@@ -92,6 +93,13 @@ function App() {
   // Saving the LANGUAGE whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Save current editor view state before changing language
+      if (monacoEditorRef.current) {
+        const currentLang = localStorage.getItem("active_language");
+        if (currentLang) {
+          editorViewStates.current[currentLang] = monacoEditorRef.current.saveViewState();
+        }
+      }
       localStorage.setItem("active_language", language);
     }
   }, [language]);
@@ -113,6 +121,14 @@ function App() {
         setCode(savedCode);
       } else {
         setCode(getDefaultCodeTemplate(language)); 
+      }
+      
+      // Restore view state for the new language after a short delay
+      if (monacoEditorRef.current && editorViewStates.current[language]) {
+        setTimeout(() => {
+          monacoEditorRef.current?.restoreViewState(editorViewStates.current[language]);
+          monacoEditorRef.current?.focus();
+        }, 50);
       }
     }
   }, [language]);
@@ -543,7 +559,6 @@ declare const __filename: string;`,
             </div>
             <div className="editor-box">
               <Editor
-                key={language}
                 height="100%"
                 defaultLanguage="python"
                 language={language}
