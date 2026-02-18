@@ -39,8 +39,15 @@ module.exports = function runCode(code, language, input, onChunk) {
         break;
       case "javascript":
         filename = path.join(__dirname, `${jobId}.js`);
-        runCommand = "sh";
-        args = ["-c", `(which stdbuf > /dev/null 2>&1 && stdbuf -oL node "${filename}") || node "${filename}"`];
+        // Prepend code to force stdout flushing after each console.log
+        const wrappedCode = `const { stdout } = require('process');
+const _log = console.log;
+console.log = (...args) => { _log(...args); stdout.write(''); };
+
+${code}`;
+        fs.writeFileSync(filename, wrappedCode);
+        runCommand = "node";
+        args = [filename];
         break;
       case "cpp":
         // C++ is tricky without Docker. We try to compile locally.
@@ -64,7 +71,10 @@ module.exports = function runCode(code, language, input, onChunk) {
 
     // 2. Write the User's Code to a File
     try {
-      fs.writeFileSync(filename, code);
+      // For JavaScript, code is already written in the switch statement
+      if (language !== "javascript") {
+        fs.writeFileSync(filename, code);
+      }
     } catch (e) {
       resolve("Error: Could not write code file.");
       return;

@@ -63,6 +63,7 @@ function App() {
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
   const monacoInitializedRef = useRef(false);
+  const monacoEditorRef = useRef(null);
   const outputStreamRef = useRef(null);
   const streamFinishedRef = useRef(false);
 
@@ -111,7 +112,6 @@ function App() {
       if (savedCode) {
         setCode(savedCode);
       } else {
-        // Now this function actually exists!
         setCode(getDefaultCodeTemplate(language)); 
       }
     }
@@ -542,12 +542,14 @@ declare const __filename: string;`,
             </div>
             <div className="editor-box">
               <Editor
+                key={language}
                 height="100%"
                 defaultLanguage="python"
                 language={language}
                 value={code}
                 onChange={(value) => setCode(value)}
-                onMount={(_, monaco) => {
+                onMount={(editor, monaco) => {
+                  monacoEditorRef.current = editor;
                   setupIntellisense(monaco);
                 }}
                 theme={theme === "dark" ? "vs-dark" : "light"}
