@@ -164,7 +164,7 @@ function App() {
     }, 1500);
 
     ws.onopen = () => {
-      setStatus("RUNNING");
+      // Don't set status here - wait for actual status from backend
     };
 
     ws.onmessage = (event) => {
