@@ -139,6 +139,7 @@ function App() {
         input
       });
       setJobId(data.jobId);
+      setStatus("RUNNING"); // Optimistically show RUNNING
       startOutputStream(data.jobId);
     } catch (err) {
       setOutput(err.response?.data?.error || "Submission failed");
