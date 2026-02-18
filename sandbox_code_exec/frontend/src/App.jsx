@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import Editor from "@monaco-editor/react";
 import "./App.css";
-import { setupPythonLanguageClient } from "./lsp/pythonClient";
 
 const toWsUrl = (httpUrl) => httpUrl.replace(/^http/, "ws");
 
@@ -64,7 +63,6 @@ function App() {
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
   const monacoInitializedRef = useRef(false);
-  const pythonClientRef = useRef(null);
   const outputStreamRef = useRef(null);
   const streamFinishedRef = useRef(false);
 
@@ -551,7 +549,6 @@ declare const __filename: string;`,
                 onChange={(value) => setCode(value)}
                 onMount={(_, monaco) => {
                   setupIntellisense(monaco);
-                  setupPythonLanguageClient(monaco, API_URL, pythonClientRef);
                 }}
                 theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
