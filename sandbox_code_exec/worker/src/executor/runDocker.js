@@ -34,13 +34,13 @@ module.exports = function runCode(code, language, input, onChunk) {
         break;
       case "python":
         filename = path.join(__dirname, `${jobId}.py`);
-        runCommand = "python3"; // Or 'python' depending on environment
-        args = [filename];
+        runCommand = "python3";
+        args = ["-u", filename]; // -u flag for unbuffered output
         break;
       case "javascript":
         filename = path.join(__dirname, `${jobId}.js`);
-        runCommand = "node";
-        args = [filename];
+        runCommand = "sh";
+        args = ["-c", `(which stdbuf > /dev/null 2>&1 && stdbuf -oL node "${filename}") || node "${filename}"`];
         break;
       case "cpp":
         // C++ is tricky without Docker. We try to compile locally.
@@ -71,7 +71,9 @@ module.exports = function runCode(code, language, input, onChunk) {
     }
 
     // 3. Spawn the Process
-    const child = spawn(runCommand, args);
+    const child = spawn(runCommand, args, {
+      env: { ...process.env, PYTHONUNBUFFERED: '1' }
+    });
 
     // 4. Setup Timeout (10 seconds)
     const timeout = setTimeout(() => {
