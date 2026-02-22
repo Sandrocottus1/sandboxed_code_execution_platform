@@ -118,6 +118,14 @@ function App() {
   };
 
   const handleResetSavedCode = () => {
+    const shouldReset = window.confirm(
+      "Are you sure? You want to reset the code. All changes will be lost."
+    );
+
+    if (!shouldReset) {
+      return;
+    }
+
     const defaultCodeByLanguage = {};
 
     SUPPORTED_LANGUAGES.forEach((lang) => {
