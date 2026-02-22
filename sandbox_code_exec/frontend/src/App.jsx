@@ -106,6 +106,39 @@ function App() {
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
   const activeCode = codeByLanguage[language] ?? getDefaultCodeTemplate(language);
 
+  const persistCodeForLanguage = (lang, value) => {
+    setCodeByLanguage((prev) => ({
+      ...prev,
+      [lang]: value,
+    }));
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`autosave_${lang}`, value);
+    }
+  };
+
+  const handleResetSavedCode = () => {
+    const defaultCodeByLanguage = {};
+
+    SUPPORTED_LANGUAGES.forEach((lang) => {
+      const template = getDefaultCodeTemplate(lang);
+      defaultCodeByLanguage[lang] = template;
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`autosave_${lang}`, template);
+      }
+
+      const model = languageModelsRef.current[lang];
+      if (model) {
+        model.setValue(template);
+      }
+    });
+
+    setCodeByLanguage(defaultCodeByLanguage);
+    setOutput("");
+    setStatus("Idle");
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("active_language", language);
@@ -131,8 +164,12 @@ function App() {
       languageModelsRef.current[language] = model;
     }
 
+    if (model.getValue() !== activeCode) {
+      model.setValue(activeCode);
+    }
+
     monacoEditorRef.current.setModel(model);
-  }, [language]);
+  }, [language, activeCode]);
 
 
   // Handling code submission
@@ -540,6 +577,13 @@ declare const __filename: string;`,
             >
               {status === "Processing..." ? "Running..." : "Run Code"}
             </button>
+            <button
+              type="button"
+              onClick={handleResetSavedCode}
+              className="run-btn"
+            >
+              Reset Saved Code
+            </button>
           </div>
         </header>
 
@@ -554,27 +598,28 @@ declare const __filename: string;`,
                 height="100%"
                 defaultLanguage="python"
                 language={language}
-                value={activeCode}
                 onChange={(value) => {
                   const nextCode = value ?? "";
-                  setCodeByLanguage((prev) => ({
-                    ...prev,
-                    [language]: nextCode,
-                  }));
-
-                  if (typeof window !== "undefined") {
-                    localStorage.setItem(`autosave_${language}`, nextCode);
-                  }
+                  const modelLanguage = monacoEditorRef.current?.getModel()?.getLanguageId() || language;
+                  persistCodeForLanguage(modelLanguage, nextCode);
                 }}
                 onMount={(editor, monaco) => {
                   monacoEditorRef.current = editor;
                   monacoRef.current = monaco;
-                  
-                  // Create initial model for the current language
-                  const initialCode = activeCode;
-                  const uri = monaco.Uri.parse(`inmemory://model/${language}`);
-                  const model = monaco.editor.createModel(initialCode, language, uri);
-                  languageModelsRef.current[language] = model;
+
+                  SUPPORTED_LANGUAGES.forEach((lang) => {
+                    const existingModel = languageModelsRef.current[lang];
+                    if (existingModel) {
+                      return;
+                    }
+
+                    const initialCode = codeByLanguage[lang] ?? getDefaultCodeTemplate(lang);
+                    const uri = monaco.Uri.parse(`inmemory://model/${lang}`);
+                    const model = monaco.editor.createModel(initialCode, lang, uri);
+                    languageModelsRef.current[lang] = model;
+                  });
+
+                  const model = languageModelsRef.current[language];
                   editor.setModel(model);
                   
                   setupIntellisense(monaco);
