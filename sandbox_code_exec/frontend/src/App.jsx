@@ -5,6 +5,24 @@ import "./App.css";
 
 const toWsUrl = (httpUrl) => httpUrl.replace(/^http/, "ws");
 
+const SUPPORTED_LANGUAGES = ["go", "c", "python", "javascript", "cpp", "java"];
+
+const getInitialLanguage = () => {
+  if (typeof window === "undefined") {
+    return "python";
+  }
+
+  return localStorage.getItem("active_language") || "python";
+};
+
+const getInitialTheme = () => {
+  if (typeof window === "undefined") {
+    return "dark";
+  }
+
+  return localStorage.getItem("active_theme") || "dark";
+};
+
 const getDefaultCodeTemplate = (language) => {
   switch (language) {
     case "go":
@@ -21,6 +39,22 @@ const getDefaultCodeTemplate = (language) => {
     default:
       return `print("Hello World")`;
   }
+};
+
+const getInitialCodeByLanguage = () => {
+  const initialCode = {};
+
+  SUPPORTED_LANGUAGES.forEach((lang) => {
+    if (typeof window !== "undefined") {
+      const savedCode = localStorage.getItem(`autosave_${lang}`);
+      initialCode[lang] = savedCode ?? getDefaultCodeTemplate(lang);
+      return;
+    }
+
+    initialCode[lang] = getDefaultCodeTemplate(lang);
+  });
+
+  return initialCode;
 };
 
 const SunIcon = () => (
@@ -55,10 +89,10 @@ const MoonIcon = () => (
 );
 
 function App() {
-  const [code, setCode] = useState("// Write your code here...");
+  const [codeByLanguage, setCodeByLanguage] = useState(getInitialCodeByLanguage);
   const [input, setInput] = useState("");
-  const [language, setLanguage] = useState("python");
-  const [theme, setTheme] = useState("dark");
+  const [language, setLanguage] = useState(getInitialLanguage);
+  const [theme, setTheme] = useState(getInitialTheme);
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
@@ -70,28 +104,8 @@ function App() {
   const streamFinishedRef = useRef(false);
 
   const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
+  const activeCode = codeByLanguage[language] ?? getDefaultCodeTemplate(language);
 
-  //Loading the Saved language on initial mount
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedLanguage = localStorage.getItem("active_language");
-      if (savedLanguage) {
-        setLanguage(savedLanguage);
-      }
-    }
-  }, []); // Runs once on mount
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("active_theme");
-      if (savedTheme) {
-        setTheme(savedTheme);
-      }
-    }
-  }, []);
-
-  // Saving the LANGUAGE whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("active_language", language);
@@ -105,44 +119,20 @@ function App() {
     }
   }, [theme]);
 
-
-  // This runs only when the 'language' changes or on first load.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedCode = localStorage.getItem(`autosave_${language}`);
-      const newCode = savedCode || getDefaultCodeTemplate(language);
-      setCode(newCode);
-      
-      // Switch to the model for this language if editor and monaco are ready
-      if (monacoEditorRef.current && monacoRef.current) {
-        let model = languageModelsRef.current[language];
-        
-        if (!model) {
-          // Create a new model for this language
-          const uri = monacoRef.current.Uri.parse(`inmemory://model/${language}`);
-          model = monacoRef.current.editor.createModel(newCode, language, uri);
-          languageModelsRef.current[language] = model;
-        } else {
-          // Update existing model if code changed
-          if (model.getValue() !== newCode) {
-            model.setValue(newCode);
-          }
-        }
-        
-        // Switch editor to use this language's model
-        monacoEditorRef.current.setModel(model);
-      }
+    if (!monacoEditorRef.current || !monacoRef.current) {
+      return;
     }
+
+    let model = languageModelsRef.current[language];
+    if (!model) {
+      const uri = monacoRef.current.Uri.parse(`inmemory://model/${language}`);
+      model = monacoRef.current.editor.createModel(activeCode, language, uri);
+      languageModelsRef.current[language] = model;
+    }
+
+    monacoEditorRef.current.setModel(model);
   }, [language]);
-
-  // Saves automatically 500ms after you stop typing.
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem(`autosave_${language}`, code);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [code, language]);
 
 
   // Handling code submission
@@ -152,7 +142,7 @@ function App() {
     
     try {
       const { data } = await axios.post(`${API_URL}/api/submit`, {
-        code,
+        code: activeCode,
         language,
         input
       });
@@ -564,14 +554,24 @@ declare const __filename: string;`,
                 height="100%"
                 defaultLanguage="python"
                 language={language}
-                value={code}
-                onChange={(value) => setCode(value)}
+                value={activeCode}
+                onChange={(value) => {
+                  const nextCode = value ?? "";
+                  setCodeByLanguage((prev) => ({
+                    ...prev,
+                    [language]: nextCode,
+                  }));
+
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem(`autosave_${language}`, nextCode);
+                  }
+                }}
                 onMount={(editor, monaco) => {
                   monacoEditorRef.current = editor;
                   monacoRef.current = monaco;
                   
                   // Create initial model for the current language
-                  const initialCode = code || getDefaultCodeTemplate(language);
+                  const initialCode = activeCode;
                   const uri = monaco.Uri.parse(`inmemory://model/${language}`);
                   const model = monaco.editor.createModel(initialCode, language, uri);
                   languageModelsRef.current[language] = model;
