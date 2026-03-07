@@ -5,6 +5,8 @@ const { globalLimiter } = require("./middleware/rateLimiter");
 
 const app =express();
 
+app.set("trust proxy", 1);
+
 app.use(cors());
 app.use(express.json());
 app.use(globalLimiter); // Apply global rate limiting to all requests

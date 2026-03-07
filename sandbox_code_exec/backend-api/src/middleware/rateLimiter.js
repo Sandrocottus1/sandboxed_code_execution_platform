@@ -1,12 +1,26 @@
 const rateLimit = require("express-rate-limit");
 
+const toPositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const GLOBAL_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_GLOBAL_WINDOW_MINUTES, 15);
+const GLOBAL_MAX = toPositiveInt(process.env.RATE_LIMIT_GLOBAL_MAX, 300);
+
+const SUBMIT_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_SUBMIT_WINDOW_MINUTES, 5);
+const SUBMIT_MAX = toPositiveInt(process.env.RATE_LIMIT_SUBMIT_MAX, 30);
+
+const QUERY_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_QUERY_WINDOW_MINUTES, 5);
+const QUERY_MAX = toPositiveInt(process.env.RATE_LIMIT_QUERY_MAX, 300);
+
 /**
  * Global Rate Limiter - Applies to all requests
- * 15 requests per 15 minutes per IP
+ * Defaults to 300 requests per 15 minutes per IP
  */
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // limit each IP to 15 requests per windowMs
+  windowMs: GLOBAL_WINDOW_MINUTES * 60 * 1000,
+  max: GLOBAL_MAX,
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -18,11 +32,11 @@ const globalLimiter = rateLimit({
 
 /**
  * Strict Rate Limiter for Code Submission
- * 5 requests per 5 minutes per IP to prevent abuse
+ * Defaults to 30 requests per 5 minutes per IP to prevent abuse
  */
 const submitLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // limit each IP to 5 submissions per windowMs
+  windowMs: SUBMIT_WINDOW_MINUTES * 60 * 1000,
+  max: SUBMIT_MAX,
   message: "Too many code submissions. Please wait before submitting again.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -34,11 +48,11 @@ const submitLimiter = rateLimit({
 
 /**
  * Moderate Rate Limiter for Job Status Queries
- * 30 requests per 5 minutes per IP
+ * Defaults to 300 requests per 5 minutes per IP
  */
 const queryLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 30,
+  windowMs: QUERY_WINDOW_MINUTES * 60 * 1000,
+  max: QUERY_MAX,
   message: "Too many queries. Please slow down.",
   standardHeaders: true,
   legacyHeaders: false,
