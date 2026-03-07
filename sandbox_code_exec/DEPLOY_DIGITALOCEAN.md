@@ -123,3 +123,39 @@ Rebuild one service:
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build backend
 ```
+
+## 9) Auto-deploy on every push (GitHub Actions)
+
+A workflow is included at `.github/workflows/deploy-digitalocean.yml`.
+It deploys when code is pushed to `main` (and can also be run manually).
+
+In your GitHub repo, add these **Actions secrets**:
+
+- `DO_HOST`: Droplet public IP (or domain)
+- `DO_USER`: SSH user on droplet (usually `root`)
+- `DO_SSH_KEY`: private SSH key content used to access the droplet
+- `DO_DEPLOY_PATH`: absolute project path on droplet (for example `/opt/sandbox_code_exec`)
+
+Generate a dedicated deploy key pair locally:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/do_deploy_key
+```
+
+Add the public key to droplet:
+
+```bash
+ssh-copy-id -i ~/.ssh/do_deploy_key.pub root@YOUR_DROPLET_IP
+```
+
+Add the private key content (`~/.ssh/do_deploy_key`) to `DO_SSH_KEY` secret.
+
+What the workflow runs on the droplet:
+
+```bash
+cd /opt/sandbox_code_exec
+git fetch --all --prune
+git reset --hard origin/main
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+```
