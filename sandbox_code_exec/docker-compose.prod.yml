@@ -1,0 +1,52 @@
+services:
+  backend:
+    build:
+      context: ./backend-api
+    restart: unless-stopped
+    env_file:
+      - ./backend-api/.env
+    depends_on:
+      - redis
+      - mongo
+
+  worker:
+    build:
+      context: ./worker
+    restart: unless-stopped
+    env_file:
+      - ./backend-api/.env
+    depends_on:
+      - redis
+      - mongo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backend-api/src/models:/worker/src/backend-models
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ""
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+  redis_data:

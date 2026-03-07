@@ -103,7 +103,9 @@ function App() {
   const outputStreamRef = useRef(null);
   const streamFinishedRef = useRef(false);
 
-  const API_URL = "https://sandboxed-code-execution-platform.onrender.com";
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "http://localhost:5000");
   const activeCode = codeByLanguage[language] ?? getDefaultCodeTemplate(language);
 
   const persistCodeForLanguage = (lang, value) => {
