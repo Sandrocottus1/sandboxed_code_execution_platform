@@ -96,6 +96,9 @@ function App() {
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState(null);
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
   const monacoInitializedRef = useRef(false);
   const monacoEditorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -161,6 +164,21 @@ function App() {
       localStorage.setItem("active_theme", theme);
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!monacoEditorRef.current || !monacoRef.current) {
@@ -290,6 +308,8 @@ function App() {
     ? "status-pill is-running"
     : "status-pill";
 
+  const isNarrowViewport = viewportWidth <= 1180;
+
   const setupIntellisense = (monaco) => {
     if (monacoInitializedRef.current) {
       return;
@@ -314,12 +334,24 @@ declare const __filename: string;`,
       "ts:node-globals.d.ts"
     );
 
-    const toSuggestion = (label, kind, insertText) => ({
-      label,
-      kind,
-      insertText,
-      insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-    });
+    const toSuggestion = (label, kind, insertText, options = {}) => {
+      const suggestion = {
+        label,
+        kind,
+        insertText,
+      };
+
+      if (options.snippet) {
+        suggestion.insertTextRules =
+          monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+      }
+
+      if (options.sortText) {
+        suggestion.sortText = options.sortText;
+      }
+
+      return suggestion;
+    };
 
     const pythonBuiltins = [
       "abs",
@@ -367,186 +399,186 @@ declare const __filename: string;`,
         toSuggestion(
           "console.log",
           monaco.languages.CompletionItemKind.Function,
-          "console.log(${1});"
+          "console.log(${1});",
+          { snippet: true }
         ),
         toSuggestion(
           "fetch",
           monaco.languages.CompletionItemKind.Function,
-          "fetch(${1:url}).then(res => res.json()).then(data => {\n  ${2}\n});"
+          "fetch(${1:url}).then(res => res.json()).then(data => {\n  ${2}\n});",
+          { snippet: true }
         ),
         toSuggestion(
           "for",
           monaco.languages.CompletionItemKind.Snippet,
-          "for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n  ${3}\n}"
+          "for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i}++) {\n  ${3}\n}",
+          { snippet: true, sortText: "0000" }
         ),
         toSuggestion(
           "async function",
           monaco.languages.CompletionItemKind.Snippet,
-          "async function ${1:name}(${2:args}) {\n  ${3}\n}"
+          "async function ${1:name}(${2:args}) {\n  ${3}\n}",
+          { snippet: true, sortText: "0001" }
         ),
         toSuggestion(
           "try/catch",
           monaco.languages.CompletionItemKind.Snippet,
-          "try {\n  ${1}\n} catch (${2:err}) {\n  ${3}\n}"
+          "try {\n  ${1}\n} catch (${2:err}) {\n  ${3}\n}",
+          { snippet: true, sortText: "0002" }
         ),
       ],
       python: [
         ...pythonBuiltins.map((name) =>
-          toSuggestion(name, monaco.languages.CompletionItemKind.Function, `${name}(${1})`)
+          toSuggestion(name, monaco.languages.CompletionItemKind.Function, `${name}()`)
         ),
         ...pythonKeywords.map((keyword) =>
           toSuggestion(keyword, monaco.languages.CompletionItemKind.Keyword, keyword)
         ),
-        {
-          ...toSuggestion(
-            "for",
-            monaco.languages.CompletionItemKind.Snippet,
-            "for ${1:i} in range(${2:n}):\n    ${3}"
-          ),
-          sortText: "0000",
-        },
-        {
-          ...toSuggestion(
-            "def",
-            monaco.languages.CompletionItemKind.Snippet,
-            "def ${1:func}(${2:args}):\n    ${3}"
-          ),
-          sortText: "0001",
-        },
-        {
-          ...toSuggestion(
-            "if",
-            monaco.languages.CompletionItemKind.Snippet,
-            "if ${1:condition}:\n    ${2}\nelse:\n    ${3}"
-          ),
-          sortText: "0002",
-        },
-        {
-          ...toSuggestion(
-            "elif",
-            monaco.languages.CompletionItemKind.Snippet,
-            "elif ${1:condition}:\n    ${2}"
-          ),
-          sortText: "0003",
-        },
-        {
-          ...toSuggestion(
-            "while",
-            monaco.languages.CompletionItemKind.Snippet,
-            "while ${1:condition}:\n    ${2}"
-          ),
-          sortText: "0004",
-        },
-        {
-          ...toSuggestion(
-            "try",
-            monaco.languages.CompletionItemKind.Snippet,
-            "try:\n    ${1}\nexcept ${2:Exception} as ${3:e}:\n    ${4}"
-          ),
-          sortText: "0005",
-        },
-        {
-          ...toSuggestion(
-            "with",
-            monaco.languages.CompletionItemKind.Snippet,
-            "with ${1:open(${2:\"file.txt\"})} as ${3:f}:\n    ${4}"
-          ),
-          sortText: "0006",
-        },
-        {
-          ...toSuggestion(
-            "class",
-            monaco.languages.CompletionItemKind.Snippet,
-            "class ${1:ClassName}(${2:object}):\n    def __init__(self, ${3:args}):\n        ${4:pass}"
-          ),
-          sortText: "0007",
-        },
-        {
-          ...toSuggestion(
-            "list comprehension",
-            monaco.languages.CompletionItemKind.Snippet,
-            "[${1:expr} for ${2:x} in ${3:iterable}]"
-          ),
-          sortText: "0008",
-        },
-        {
-          ...toSuggestion(
-            "dict comprehension",
-            monaco.languages.CompletionItemKind.Snippet,
-            "{${1:key}: ${2:value} for ${3:k}, ${4:v} in ${5:iterable}}"
-          ),
-          sortText: "0009",
-        },
-        {
-          ...toSuggestion(
-            "f-string",
-            monaco.languages.CompletionItemKind.Snippet,
-            "f\"${1:var} = {${2:value}}\""
-          ),
-          sortText: "0010",
-        },
+        toSuggestion(
+          "for loop",
+          monaco.languages.CompletionItemKind.Snippet,
+          "for ${1:i} in range(${2:n}):\n    ${3}",
+          { snippet: true, sortText: "0000" }
+        ),
+        toSuggestion(
+          "def function",
+          monaco.languages.CompletionItemKind.Snippet,
+          "def ${1:func}(${2:args}):\n    ${3}",
+          { snippet: true, sortText: "0001" }
+        ),
+        toSuggestion(
+          "if/else",
+          monaco.languages.CompletionItemKind.Snippet,
+          "if ${1:condition}:\n    ${2}\nelse:\n    ${3}",
+          { snippet: true, sortText: "0002" }
+        ),
+        toSuggestion(
+          "while loop",
+          monaco.languages.CompletionItemKind.Snippet,
+          "while ${1:condition}:\n    ${2}",
+          { snippet: true, sortText: "0003" }
+        ),
+        toSuggestion(
+          "try/except",
+          monaco.languages.CompletionItemKind.Snippet,
+          "try:\n    ${1}\nexcept ${2:Exception} as ${3:e}:\n    ${4}",
+          { snippet: true, sortText: "0004" }
+        ),
+        toSuggestion(
+          "with context",
+          monaco.languages.CompletionItemKind.Snippet,
+          "with ${1:open(${2:\"file.txt\"})} as ${3:f}:\n    ${4}",
+          { snippet: true, sortText: "0005" }
+        ),
+        toSuggestion(
+          "class template",
+          monaco.languages.CompletionItemKind.Snippet,
+          "class ${1:ClassName}(${2:object}):\n    def __init__(self, ${3:args}):\n        ${4:pass}",
+          { snippet: true, sortText: "0006" }
+        ),
+        toSuggestion(
+          "list comprehension",
+          monaco.languages.CompletionItemKind.Snippet,
+          "[${1:expr} for ${2:x} in ${3:iterable}]",
+          { snippet: true, sortText: "0007" }
+        ),
+        toSuggestion(
+          "dict comprehension",
+          monaco.languages.CompletionItemKind.Snippet,
+          "{${1:key}: ${2:value} for ${3:k}, ${4:v} in ${5:iterable}}",
+          { snippet: true, sortText: "0008" }
+        ),
+        toSuggestion(
+          "f-string",
+          monaco.languages.CompletionItemKind.Snippet,
+          "f\"${1:var} = {${2:value}}\"",
+          { snippet: true, sortText: "0009" }
+        ),
       ],
       go: [
-        {
-          label: "fmt.Println",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "fmt.Println(${1})",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "main",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "func main() {\n    ${1}\n}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        toSuggestion(
+          "fmt.Println",
+          monaco.languages.CompletionItemKind.Function,
+          "fmt.Println(${1})",
+          { snippet: true }
+        ),
+        toSuggestion(
+          "main",
+          monaco.languages.CompletionItemKind.Snippet,
+          "func main() {\n    ${1}\n}",
+          { snippet: true }
+        ),
       ],
       c: [
-        {
-          label: "printf",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "printf(\"${1}\\n\");",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "main",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "int main() {\n    ${1}\n    return 0;\n}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        toSuggestion(
+          "printf",
+          monaco.languages.CompletionItemKind.Function,
+          "printf(\"${1}\\n\");",
+          { snippet: true }
+        ),
+        toSuggestion(
+          "main",
+          monaco.languages.CompletionItemKind.Snippet,
+          "int main() {\n    ${1}\n    return 0;\n}",
+          { snippet: true }
+        ),
       ],
       cpp: [
-        {
-          label: "cout",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "std::cout << ${1} << std::endl;",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "main",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "int main() {\n    ${1}\n    return 0;\n}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        toSuggestion(
+          "cout",
+          monaco.languages.CompletionItemKind.Function,
+          "std::cout << ${1} << std::endl;",
+          { snippet: true }
+        ),
+        toSuggestion(
+          "main",
+          monaco.languages.CompletionItemKind.Snippet,
+          "int main() {\n    ${1}\n    return 0;\n}",
+          { snippet: true }
+        ),
       ],
       java: [
-        {
-          label: "System.out.println",
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: "System.out.println(${1});",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
-        {
-          label: "main",
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: "public static void main(String[] args) {\n    ${1}\n}",
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        },
+        toSuggestion(
+          "System.out.println",
+          monaco.languages.CompletionItemKind.Function,
+          "System.out.println(${1});",
+          { snippet: true }
+        ),
+        toSuggestion(
+          "main",
+          monaco.languages.CompletionItemKind.Snippet,
+          "public static void main(String[] args) {\n    ${1}\n}",
+          { snippet: true }
+        ),
       ],
     };
 
     Object.entries(completionSets).forEach(([lang, suggestions]) => {
       monaco.languages.registerCompletionItemProvider(lang, {
-        provideCompletionItems: () => ({ suggestions }),
+        triggerCharacters: [".", "_"],
+        provideCompletionItems: (model, position) => {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          };
+
+          const prefix = (word.word || "").toLowerCase();
+          const filteredSuggestions = prefix
+            ? suggestions.filter((suggestion) =>
+                String(suggestion.label).toLowerCase().startsWith(prefix)
+              )
+            : suggestions;
+
+          return {
+            suggestions: filteredSuggestions.map((suggestion) => ({
+              ...suggestion,
+              range,
+            })),
+          };
+        },
       });
     });
   };
@@ -637,16 +669,19 @@ declare const __filename: string;`,
                 theme={theme === "dark" ? "vs-dark" : "light"}
                 options={{
                   minimap: { enabled: false },
-                  fontSize: 14,
+                  fontSize: isNarrowViewport ? 13 : 14,
                   automaticLayout: true,
                   scrollBeyondLastLine: false,
+                  wordWrap: isNarrowViewport ? "on" : "off",
                   quickSuggestions: true,
+                  quickSuggestionsDelay: 80,
                   suggestOnTriggerCharacters: true,
                   tabCompletion: "on",
                   inlineSuggest: { enabled: true },
-                  acceptSuggestionOnEnter: "on",
+                  acceptSuggestionOnEnter: "smart",
                   suggestSelection: "first",
-                  wordBasedSuggestions: "off",
+                  snippetSuggestions: "inline",
+                  wordBasedSuggestions: "currentDocument",
                 }}
               />
             </div>
