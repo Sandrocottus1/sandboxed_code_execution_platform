@@ -6,17 +6,17 @@ const toPositiveInt = (value, fallback) => {
 };
 
 const GLOBAL_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_GLOBAL_WINDOW_MINUTES, 15);
-const GLOBAL_MAX = toPositiveInt(process.env.RATE_LIMIT_GLOBAL_MAX, 300);
+const GLOBAL_MAX = toPositiveInt(process.env.RATE_LIMIT_GLOBAL_MAX, 2000);
 
 const SUBMIT_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_SUBMIT_WINDOW_MINUTES, 5);
-const SUBMIT_MAX = toPositiveInt(process.env.RATE_LIMIT_SUBMIT_MAX, 30);
+const SUBMIT_MAX = toPositiveInt(process.env.RATE_LIMIT_SUBMIT_MAX, 120);
 
 const QUERY_WINDOW_MINUTES = toPositiveInt(process.env.RATE_LIMIT_QUERY_WINDOW_MINUTES, 5);
-const QUERY_MAX = toPositiveInt(process.env.RATE_LIMIT_QUERY_MAX, 300);
+const QUERY_MAX = toPositiveInt(process.env.RATE_LIMIT_QUERY_MAX, 1200);
 
 /**
  * Global Rate Limiter - Applies to all requests
- * Defaults to 300 requests per 15 minutes per IP
+ * Defaults to 2000 requests per 15 minutes per IP
  */
 const globalLimiter = rateLimit({
   windowMs: GLOBAL_WINDOW_MINUTES * 60 * 1000,
@@ -31,8 +31,8 @@ const globalLimiter = rateLimit({
 });
 
 /**
- * Strict Rate Limiter for Code Submission
- * Defaults to 30 requests per 5 minutes per IP to prevent abuse
+ * Relaxed Rate Limiter for Code Submission
+ * Defaults to 120 requests per 5 minutes per IP
  */
 const submitLimiter = rateLimit({
   windowMs: SUBMIT_WINDOW_MINUTES * 60 * 1000,
@@ -48,7 +48,7 @@ const submitLimiter = rateLimit({
 
 /**
  * Moderate Rate Limiter for Job Status Queries
- * Defaults to 300 requests per 5 minutes per IP
+ * Defaults to 1200 requests per 5 minutes per IP
  */
 const queryLimiter = rateLimit({
   windowMs: QUERY_WINDOW_MINUTES * 60 * 1000,
