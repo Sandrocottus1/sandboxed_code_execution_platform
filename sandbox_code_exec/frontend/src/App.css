@@ -381,3 +381,20 @@ body[data-theme="light"] pre {
     flex-direction: column;
   }
 }
+
+.app-footer {
+  margin-top: 18px;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: transparent;
+}
+
+.app-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
