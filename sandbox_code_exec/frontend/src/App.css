@@ -360,25 +360,110 @@ body[data-theme="light"] pre {
   .app-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 16px;
   }
 
   .control-panel {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: stretch;
+  }
+
+  .control-panel > * {
+    flex: 1 1 0;
   }
 }
 
 @media (max-width: 720px) {
   .app {
-    padding: 24px 16px 32px;
+    padding: 16px 12px 24px;
+  }
+
+  .app-shell {
+    gap: 16px;
   }
 
   .workspace {
     min-height: auto;
   }
 
+  .app-header {
+    align-items: stretch;
+  }
+
   .side-panel {
     flex-direction: column;
+    gap: 12px;
+  }
+
+  .app-header {
+    gap: 14px;
+  }
+
+  .title-block h1 {
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+
+  .title-block p {
+    font-size: 0.88rem;
+  }
+
+  .control-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .control-panel > * {
+    width: 100%;
+  }
+
+  .theme-toggle {
+    justify-content: center;
+  }
+
+  .lang-select,
+  .run-btn {
+    width: 100%;
+  }
+
+  .editor-box {
+    min-height: 44vh;
+    height: 44vh;
+    max-height: 480px;
+  }
+
+  .panel-card {
+    min-height: 180px;
+  }
+
+  .app-footer {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 480px) {
+  .control-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .title-block h1 {
+    font-size: 1.2rem;
+  }
+
+  .editor-box {
+    min-height: 38vh;
+    height: 38vh;
+  }
+
+  .panel-card {
+    min-height: 160px;
+  }
+
+  .app-footer {
+    padding: 4px 8px;
   }
 }
 
