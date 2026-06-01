@@ -714,7 +714,7 @@ declare const __filename: string;`,
 
         <footer className="app-footer">
           <div style={{ textAlign: "center", padding: 12, color: "var(--muted)" }}>
-            © 2026 CodeExecutor — <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms</a>
+            © 2026 CodeExecutor — <a href="/about.html" target="_blank" rel="noopener noreferrer">About</a> · <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms</a>
           </div>
         </footer>
       </div>
